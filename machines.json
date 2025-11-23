@@ -1,0 +1,419 @@
+{
+  "CM360LR.docx": {
+    "base": 3995,
+    "options": {
+      "Voltage": {
+        "type": "select",
+        "choices": [
+          {"label": "110 V / 1 ph / 50/60 hz ($ 0 USD)", "price": 0}
+        ]
+      },
+      "Gas Flush ($ 695 USD)": {"type": "checkbox", "price": 695},
+      "Sample parts kit included": {
+        "type": "select",
+        "choices": [
+          {"label": "Yes ($ 0 USD)", "price": 0}
+        ]
+      }
+    }
+  },
+  "CM430.docx": {
+    "base": 3695,
+    "options": {
+      "Voltage": {
+        "type": "select",
+        "choices": [
+          {"label": "110 V / 1 ph / 50/60 hz ($ 0 USD)", "price": 0}
+        ]
+      },
+      "Gas Flush ($ 695 USD)": {"type": "checkbox", "price": 695},
+      "Sample parts kit included": {
+        "type": "select",
+        "choices": [
+          {"label": "Yes ($ 0 USD)", "price": 0}
+        ]
+      }
+    }
+  },
+  "CM640.docx": {
+    "base": 15995,
+    "options": {
+      "Voltage": {
+        "type": "select",
+        "choices": [
+          {"label": "208 V / 3 ph / 60 hz ($ 0 USD)", "price": 0},
+          {"label": "220 V/1 PH/60 hz (100m3 pump only) ($ 1,495 USD)", "price": 1495},
+          {"label": "400 V / 3 ph / 50 hz ($ 495 USD)", "price": 495},
+          {"label": "440 V / 3 ph / 60 hz ($ 495 USD)", "price": 495},
+          {"label": "480 V / 3 ph / 60 hz ($ 495 USD)", "price": 495}
+        ]
+      },
+      "Gas Flush ($ 995 USD)": {"type": "checkbox", "price": 995},
+      "Positive Air Sealer (for use in low vacuum and gas flush applications) ($ 695 USD)": {
+        "type": "checkbox",
+        "price": 695
+      }
+    }
+  },
+  "CM780.docx": {
+    "base": 20995,
+    "options": {
+      "Voltage": {
+        "type": "select",
+        "choices": [
+          {"label": "208 V / 3 ph / 60 hz ($ 0 USD)", "price": 0},
+          {"label": "400 V / 3 ph / 50 hz ($ 495 USD)", "price": 495},
+          {"label": "480 V / 3 ph / 60 hz ($ 495 USD)", "price": 495}
+        ]
+      },
+      "Lid size": {
+        "type": "select",
+        "choices": [
+          {"label": "8\" Lid Height ($ 0 USD)", "price": 0},
+          {"label": "10\" Lid Height ($ 995 USD)", "price": 995}
+        ]
+      },
+      "Mechanical Cut w/ Positive Air Sealer": {
+        "type": "select",
+        "choices": [
+          {"label": "None ($ 0 USD)", "price": 0},
+          {"label": "Yes ($ 3,495 USD)", "price": 3495}
+        ]
+      },
+      "Pump Options": {
+        "type": "select",
+        "choices": [
+          {"label": "1x 200m3 pump (4.2 kw = 5.71 hp) ($ 0 USD)", "price": 0}
+        ]
+      },
+      "Gas Flush ($ 995 USD)": {"type": "checkbox", "price": 995},
+      "Positive Air Sealer (for use in low vacuum and gas flush applications) ($ 695 USD)": {
+        "type": "checkbox",
+        "price": 695
+      },
+      "Bi-active Sealing System ($ 1,295 USD)": {"type": "checkbox", "price": 1295},
+      "Sample parts kit included": {
+        "type": "select",
+        "choices": [
+          {"label": "Yes ($ 0 USD)", "price": 0}
+        ]
+      }
+    }
+  },
+  "CM860.docx": {
+    "base": 24995,
+    "options": {
+      "Voltage": {
+        "type": "select",
+        "choices": [
+          {"label": "208 V / 3 ph / 60 hz / 40A ($ 0 USD)", "price": 0},
+          {"label": "400 V / 3 ph / 50 hz ($ 495 USD)", "price": 495},
+          {"label": "480 V / 3 ph / 60 hz ($ 495 USD)", "price": 495}
+        ]
+      },
+      "Lid size": {
+        "type": "select",
+        "choices": [
+          {"label": "8\" Lid Height ($ 0 USD)", "price": 0},
+          {"label": "10\" Lid Height ($ 995 USD)", "price": 995},
+          {"label": "12\" Lid Height ($ 1,995 USD)", "price": 1995}
+        ]
+      },
+      "Operation": {
+        "type": "select",
+        "choices": [
+          {"label": "Automatic lid with NO mechanical cut ($ 0 USD)", "price": 0},
+          {"label": "Automatic lid, WITH mechanical cut (distance between seal bars: 655mm) ($ 3,495 USD)", "price": 3495}
+        ]
+      },
+      "Pump Options": {
+        "type": "select",
+        "choices": [
+          {"label": "1x 300m3 pump (6.6kw=8.97HP) ($ 0 USD)", "price": 0}
+        ]
+      },
+      "Bi-active Sealing System ($ 1,995 USD)": {"type": "checkbox", "price": 1995},
+      "Gas Flush ($ 995 USD)": {"type": "checkbox", "price": 995},
+      "Positive Air Sealer ($ 695 USD)": {"type": "checkbox", "price": 695},
+      "Sample parts kit included": {
+        "type": "select",
+        "choices": [
+          {"label": "Yes ($ 0 USD)", "price": 0}
+        ]
+      }
+    }
+  },
+  "CM900A.docx": {
+    "base": 32995,
+    "options": {
+      "Voltage": {
+        "type": "select",
+        "choices": [
+          {"label": "208 V / 3 ph / 60 hz / 40A ($ 0 USD)", "price": 0},
+          {"label": "400 V / 3 ph / 50 hz ($ 495 USD)", "price": 495},
+          {"label": "480 V / 3 ph / 60 hz ($ 495 USD)", "price": 495}
+        ]
+      },
+      "Lid size": {
+        "type": "select",
+        "choices": [
+          {"label": "8\" Lid Height ($ 0 USD)", "price": 0},
+          {"label": "10\" Lid Height ($ 1,000 USD)", "price": 1000},
+          {"label": "12\" Lid Height ($ 2,000 USD)", "price": 2000}
+        ]
+      },
+      "Operation": {
+        "type": "select",
+        "choices": [
+          {"label": "Automatic lid with NO mechanical cut ($ 0 USD)", "price": 0},
+          {"label": "Automatic lid, WITH mechanical cut (distance between seal bars: 815mm) ($ 4,995 USD)", "price": 4995}
+        ]
+      },
+      "Pump Options": {
+        "type": "select",
+        "choices": [
+          {"label": "300 m3 (6.6kw=8.97HP) ($ 0 USD)", "price": 0}
+        ]
+      },
+      "Bi-active Sealing System ($ 1,995 USD)": {"type": "checkbox", "price": 1995},
+      "Gas Flush ($ 995 USD)": {"type": "checkbox", "price": 995},
+      "Positive Air Sealer ($ 695 USD)": {"type": "checkbox", "price": 695}
+    }
+  },
+  "CM1100.docx": {
+    "base": 34995,
+    "options": {
+      "Voltage": {
+        "type": "select",
+        "choices": [
+          {"label": "208 V / 3 ph / 60 hz / 40A ($ 0 USD)", "price": 0},
+          {"label": "400 V / 3 ph / 50 hz ($ 495 USD)", "price": 495},
+          {"label": "480 V / 3 ph / 60 hz ($ 495 USD)", "price": 495}
+        ]
+      },
+      "Lid size": {
+        "type": "select",
+        "choices": [
+          {"label": "10\" Lid Height ($ 0 USD)", "price": 0},
+          {"label": "12\" Lid Height ($ 1,000 USD)", "price": 1000}
+        ]
+      },
+      "Operation": {
+        "type": "select",
+        "choices": [
+          {"label": "Automatic lid with NO mechanical cut ($ 0 USD)", "price": 0},
+          {"label": "Automatic lid, WITH mechanical cut (distance between seal bars: 815mm) ($ 4,995 USD)", "price": 4995}
+        ]
+      },
+      "Pump Options": {
+        "type": "select",
+        "choices": [
+          {"label": "300 m3 (6.6kw=8.97HP) ($ 0 USD)", "price": 0},
+          {"label": "2 x 200 m3 (pumps internally mounted, 6.6kw=8.97HP each) ($ 13,995 USD)", "price": 13995},
+          {"label": "2 x 300 m3 (pumps internally mounted, 6.6kw=8.97HP each) ($ 13,995 USD)", "price": 13995}
+        ]
+      },
+      "Bi-active Sealing System ($ 1,995 USD)": {"type": "checkbox", "price": 1995},
+      "Gas Flush ($ 995 USD)": {"type": "checkbox", "price": 995},
+      "Positive Air Sealer ($ 695 USD)": {"type": "checkbox", "price": 695}
+    }
+  },
+  "TS420.docx": {
+    "base": 23995,
+    "options": {
+      "Voltaje": {
+        "type": "select",
+        "choices": [
+          {"label": "220V / 3ph / 60hz ($ 0 USD)", "price": 0},
+          {"label": "400 V / 3 ph / 50 hz ($ 149 USD)", "price": 149},
+          {"label": "480 V / 3 ph / 60 hz ($ 149 USD)", "price": 149}
+        ]
+      },
+      "Registro de fotografías": {
+        "type": "select",
+        "choices": [
+          {"label": "Yes ($ 0 USD)", "price": 0}
+        ]
+      },
+      "Configuración de matriz": {
+        "type": "select",
+        "choices": [
+          {"label": "1 UP ($ 3,995 USD)", "price": 3995},
+          {"label": "2 UP ($ 4,595 USD)", "price": 4595},
+          {"label": "3 UP ($ 5,195 USD)", "price": 5195},
+          {"label": "4 UP ($ 5,795 USD)", "price": 5795},
+          {"label": "5 UP ($ 6,395 USD)", "price": 6395},
+          {"label": "6 UP ($ 6,995 USD)", "price": 6995}
+        ]
+      },
+      "La forma de la matriz (Geometría)": {
+        "type": "select",
+        "choices": [
+          {"label": "Other", "price": 0},
+          {"label": "Rectangle", "price": 0},
+          {"label": "Round", "price": 0},
+          {"label": "Square", "price": 0},
+          {"label": "Rectangle Standard VC No.3 tray", "price": 0}
+        ]
+      }
+    }
+  },
+  "TS455.docx": {
+    "base": 28995,
+    "options": {
+      "Voltaje": {
+        "type": "select",
+        "choices": [
+          {"label": "220V / 3ph / 60hz ($ 0 USD)", "price": 0},
+          {"label": "400 V / 3 ph / 50 hz ($ 149 USD)", "price": 149},
+          {"label": "480 V / 3 ph / 60 hz ($ 149 USD)", "price": 149}
+        ]
+      },
+      "Registro de fotografías": {
+        "type": "select",
+        "choices": [
+          {"label": "Yes ($ 0 USD)", "price": 0}
+        ]
+      },
+      "Proceso": {
+        "type": "select",
+        "choices": [
+          {"label": "MAP/Lidding", "price": 0},
+          {"label": "Skin", "price": 0}
+        ]
+      },
+      "Configuración de matriz": {
+        "type": "select",
+        "choices": [
+          {"label": "1 UP ($ 6,995 USD)", "price": 6995},
+          {"label": "2 UP ($ 7,595 USD)", "price": 7595},
+          {"label": "3 UP ($ 8,195 USD)", "price": 8195},
+          {"label": "4 UP ($ 8,795 USD)", "price": 8795},
+          {"label": "5 UP ($ 6,395 USD)", "price": 6395},
+          {"label": "6 UP ($ 6,995 USD)", "price": 6995}
+        ]
+      },
+      "La forma de la matriz (Geometría)": {
+        "type": "select",
+        "choices": [
+          {"label": "Other", "price": 0},
+          {"label": "Rectangle", "price": 0},
+          {"label": "Round", "price": 0},
+          {"label": "Square", "price": 0},
+          {"label": "Rectangle Standard VC No.3 tray", "price": 0}
+        ]
+      }
+    }
+  },
+  "TS540.docx": {
+    "base": 31995,
+    "options": {
+      "Indice": {
+        "type": "select",
+        "choices": [
+          {"label": "340 mm ($ 0 USD)", "price": 0}
+        ]
+      },
+      "Voltaje": {
+        "type": "select",
+        "choices": [
+          {"label": "220V / 3ph / 60hz ($ 0 USD)", "price": 0},
+          {"label": "400 V / 3 ph / 50 hz ($ 149 USD)", "price": 149},
+          {"label": "480 V / 3 ph / 60 hz ($ 149 USD)", "price": 149}
+        ]
+      },
+      "Registro de fotografías": {
+        "type": "select",
+        "choices": [
+          {"label": "Sí ($ 0 USD)", "price": 0}
+        ]
+      },
+      "Sistema de descarga de bandeja fácil ($ 2,226 USD)": {"type": "checkbox", "price": 2226},
+      "Forma de la matriz": {
+        "type": "select",
+        "choices": [
+          {"label": "Rectángulo", "price": 0},
+          {"label": "Redondo", "price": 0},
+          {"label": "Cuadrado", "price": 0},
+          {"label": "Rectángulo estándar VC No.3 bandeja", "price": 0}
+        ]
+      },
+      "Configuración de la matriz": {
+        "type": "select",
+        "choices": [
+          {"label": "1 UP ($ 6,995 USD)", "price": 6995},
+          {"label": "2 UP ($ 7,595 USD)", "price": 7595},
+          {"label": "3 UP ($ 8,195 USD)", "price": 8195},
+          {"label": "4 UP ($ 8,795 USD)", "price": 8795}
+        ]
+      }
+    }
+  },
+  "Detector de Metales MDM4121.docx": {
+    "base": 15202,
+    "options": {
+      "Voltage": {
+        "type": "select",
+        "choices": [
+          {"label": "208 V / 1 ph / 60 Hz ($ 0 USD)", "price": 0},
+          {"label": "110 V / 1 ph / 60 Hz ($ 1,056 USD)", "price": 1056}
+        ]
+      },
+      "Product Width (mm)": {
+        "type": "select",
+        "choices": [
+          {"label": "400 ($ 0 USD)", "price": 0},
+          {"label": "350 ($ 0 USD)", "price": 0},
+          {"label": "450 ($ 457 USD)", "price": 457},
+          {"label": "500 ($ 685 USD)", "price": 685},
+          {"label": "550 ($ 1,370 USD)", "price": 1370},
+          {"label": "600 ($ 2,055 USD)", "price": 2055},
+          {"label": "650 ($ 2,740 USD)", "price": 2740}
+        ]
+      },
+      "Machine Direction": {
+        "type": "select",
+        "choices": [
+          {"label": "Left to Right ($ 0 USD)", "price": 0},
+          {"label": "Right to Left ($ 857 USD)", "price": 857}
+        ]
+      },
+      "Product Height (mm)": {
+        "type": "select",
+        "choices": [
+          {"label": "200 ($ 0 USD)", "price": 0},
+          {"label": "100 ($ 0 USD)", "price": 0},
+          {"label": "135 ($ 0 USD)", "price": 0},
+          {"label": "225 ($ 229 USD)", "price": 229},
+          {"label": "250 ($ 343 USD)", "price": 343},
+          {"label": "300 ($ 685 USD)", "price": 685},
+          {"label": "350 ($ 1,370 USD)", "price": 1370},
+          {"label": "400 ($ 2,055 USD)", "price": 2055},
+          {"label": "450 ($ 2,740 USD)", "price": 2740}
+        ]
+      },
+      "Product Length (mm)": {
+        "type": "select",
+        "choices": [
+          {"label": "300 ($ 0 USD)", "price": 0},
+          {"label": "500 ($ 454 USD)", "price": 454},
+          {"label": "550 ($ 817 USD)", "price": 817},
+          {"label": "625 ($ 1,180 USD)", "price": 1180},
+          {"label": "800 ($ 2,854 USD)", "price": 2854}
+        ]
+      },
+      "Reject System": {
+        "type": "select",
+        "choices": [
+          {"label": "None ($ 0 USD)", "price": 0},
+          {"label": "T-Pusher Only (up to 20kg products) ($ 429 USD)", "price": 429},
+          {"label": "T-Pusher, Cover, & Collection Bin (up to 10kg products) ($ 1,239 USD)", "price": 1239}
+        ]
+      },
+      "NOM-001-SCFI-2018/2014 Certification": {
+        "type": "checkbox",
+        "price": 2572
+      }
+    }
+  }
+}

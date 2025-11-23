@@ -1,0 +1,57 @@
+Instrucciones para generar un archivo .exe desde PowerShell usando PyInstaller
+==========================================================================
+
+1. Instalar dependencias básicas
+   - Abre PowerShell con permisos de administrador (botón derecho sobre el icono de PowerShell → "Ejecutar como administrador").
+   - Comprueba que tienes Python 3 instalado ejecutando:
+     ```powershell
+     python --version
+     ```
+     Si no está instalado, descárgalo desde https://www.python.org/downloads/ y agrega Python al PATH durante la instalación.
+   - Actualiza pip a la última versión:
+     ```powershell
+     python -m pip install --upgrade pip
+     ```
+
+2. Instalar PyInstaller (herramienta que empaqueta scripts de Python en ejecutables .exe)
+   ```powershell
+   pip install pyinstaller
+   ```
+
+3. Preparar tu proyecto
+   - Coloca tu script principal (por ejemplo `mi_script.py`) y los recursos que necesite en una carpeta sin espacios en la ruta (por ejemplo `C:\proyectos\mi_app`).
+   - Desde PowerShell, navega a esa carpeta:
+     ```powershell
+     Set-Location C:\proyectos\mi_app
+     ```
+
+4. Generar el ejecutable básico
+   - Ejecuta PyInstaller indicando el script principal:
+     ```powershell
+     pyinstaller --onefile mi_script.py
+     ```
+   - La opción `--onefile` empaqueta todo en un único ejecutable. Si tu app tiene interfaz gráfica y no quieres que aparezca una consola, agrega `--noconsole`.
+
+5. Revisar la salida
+   - PyInstaller creará carpetas `build` y `dist`. El archivo `.exe` estará en `dist` (por ejemplo `dist\mi_script.exe`).
+   - Ejecuta el `.exe` para validar que funciona:
+     ```powershell
+     .\dist\mi_script.exe
+     ```
+
+6. Opciones adicionales útiles
+   - Incluir icono personalizado:
+     ```powershell
+     pyinstaller --onefile --icon=mi_icono.ico mi_script.py
+     ```
+   - Copiar archivos extra (por ejemplo plantillas o configuraciones) coloca esos archivos junto al `.exe` dentro de la carpeta `dist` o usa un archivo `.spec` para definir la inclusión durante el empaquetado.
+
+7. Limpieza (opcional)
+   - Si deseas eliminar las carpetas temporales creadas por PyInstaller después de confirmar que el `.exe` funciona, ejecuta:
+     ```powershell
+     Remove-Item -Recurse -Force build
+     Remove-Item -Recurse -Force __pycache__
+     ```
+   - El ejecutable final seguirá en la carpeta `dist`.
+
+Con estos pasos podrás generar un ejecutable `.exe` desde PowerShell a partir de tu script de Python.

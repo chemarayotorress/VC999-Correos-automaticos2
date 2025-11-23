@@ -1,0 +1,15 @@
+# Entornos virtuales
+.venv/
+
+# Artefactos de compilación
+build/
+dist/
+__pycache__/
+*.spec
+
+# Ejecutables generados
+VC999_Cotizador.exe
+VC999_Cotizador_integridad.txt
+
+# Archivos temporales
+*.pyc

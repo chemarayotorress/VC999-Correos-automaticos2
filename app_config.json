@@ -1,0 +1,11 @@
+{
+  "base_prices": {
+    "CM1100.docx": "34995",
+    "CM360LR.docx": "3995",
+    "CM430.docx": "3695",
+    "TS420.docx": "23995"
+  },
+  "language": "es",
+  "lang": "Español",
+  "backend_url": "http://tu-servidor:5000"
+}
