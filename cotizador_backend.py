@@ -173,6 +173,19 @@ def _normalize_key(text: str) -> str:
     return nk
 
 
+def _to_bool_or_none(value: Any) -> Optional[bool]:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    text = str(value).strip().lower()
+    if text in {"1", "true", "si", "sí", "yes", "on"}:
+        return True
+    if text in {"0", "false", "no", "off"}:
+        return False
+    return bool(text)
+
+
 def _replace_in_paragraph(paragraph, key: str, value: str):
     if key not in paragraph.text:
         return
@@ -493,4 +506,80 @@ def generar_cotizacion_backend(
         "opciones": selected,
         "contrato": contrato,
     }
+
+
+def generar_cotizacion_desde_json(datos: dict) -> str:
+    """Genera una cotización a partir de un diccionario y devuelve la ruta del PDF."""
+
+    if not isinstance(datos, dict):
+        raise ValueError("Se esperaba un diccionario de datos")
+
+    modelo = (datos.get("modelo") or "").strip()
+    cliente = (datos.get("nombre_cliente") or datos.get("cliente") or "").strip()
+    if not modelo:
+        raise ValueError("El campo 'modelo' es obligatorio")
+    if not cliente:
+        raise ValueError("El campo 'nombre_cliente' es obligatorio")
+
+    asesor = datos.get("asesor")
+    validez_dias = datos.get("validez_dias")
+    moneda = datos.get("tipo_moneda") or datos.get("moneda")
+    notas = datos.get("notas")
+    flete_texto = datos.get("flete_texto")
+    flete_monto = datos.get("flete_monto")
+
+    overrides: Dict[str, Any] = {}
+
+    def _set_override(key: str, value: Any) -> None:
+        if value is None:
+            return
+        if isinstance(value, str) and value.strip() == "":
+            return
+        overrides[key] = value
+
+    _set_override("altura_tapa", datos.get("altura_tapa") or datos.get("numero_tapa"))
+    _set_override("operacion", datos.get("operacion"))
+    _set_override("opcion_bomba", datos.get("opcion_bomba"))
+    _set_override("kit_muestras", datos.get("kit_muestras"))
+    _set_override("kit_muestras_nit", datos.get("kit_muestras_nit"))
+
+    for key, raw in (
+        ("descarga_gas", datos.get("inyeccion_gas")),
+        ("sistema_biactivo", datos.get("sistema_biactivo")),
+        ("aire_positivo", datos.get("aire_positivo")),
+    ):
+        bval = _to_bool_or_none(raw)
+        if bval is not None:
+            overrides[key] = bval
+
+    for idx in range(1, 4):
+        _set_override(f"contrato{idx}_porcentaje", datos.get(f"contrato{idx}_porcentaje"))
+        _set_override(f"contrato{idx}_condicion", datos.get(f"contrato{idx}_condicion"))
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    base_name = f"Cotizacion_{_sanitize_filename(modelo)}_{_sanitize_filename(cliente)}_{timestamp}"
+    salida_dir = os.path.join(_app_dir(), "salidas")
+    os.makedirs(salida_dir, exist_ok=True)
+    ruta_word = os.path.join(salida_dir, f"{base_name}.docx")
+    ruta_pdf = os.path.join(salida_dir, f"{base_name}.pdf")
+
+    resultado = generar_cotizacion_backend(
+        modelo=modelo,
+        cliente=cliente,
+        asesor=asesor,
+        validez_dias=int(validez_dias) if validez_dias is not None else None,
+        moneda=moneda,
+        flete_texto=flete_texto,
+        flete_monto=flete_monto,
+        notas=notas,
+        opciones_overrides=overrides,
+        ruta_salida_word=ruta_word,
+        ruta_salida_pdf=ruta_pdf,
+    )
+
+    pdf_path = resultado.get("ruta_pdf") or ruta_pdf
+    if not pdf_path or not os.path.exists(pdf_path):
+        raise FileNotFoundError(f"No se pudo generar el PDF en {pdf_path}")
+
+    return pdf_path
 
