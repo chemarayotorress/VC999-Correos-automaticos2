@@ -1,6 +1,6 @@
 {
   "CM360LR.docx": {
-    "base": 3995,
+    "base": 4,295,
     "options": {
       "Voltage": {
         "type": "select",
@@ -18,7 +18,7 @@
     }
   },
   "CM430.docx": {
-    "base": 3695,
+    "base": 3,995,
     "options": {
       "Voltage": {
         "type": "select",
@@ -36,41 +36,41 @@
     }
   },
   "CM640.docx": {
-    "base": 15995,
+    "base": 17,995,
     "options": {
       "Voltage": {
         "type": "select",
         "choices": [
           {"label": "208 V / 3 ph / 60 hz ($ 0 USD)", "price": 0},
-          {"label": "220 V/1 PH/60 hz (100m3 pump only) ($ 1,495 USD)", "price": 1495},
+          {"label": "220 V/1 PH/60 hz (100m3 pump only) ($ 1,600 USD)", "price": 1600},
           {"label": "400 V / 3 ph / 50 hz ($ 495 USD)", "price": 495},
-          {"label": "440 V / 3 ph / 60 hz ($ 495 USD)", "price": 495},
-          {"label": "480 V / 3 ph / 60 hz ($ 495 USD)", "price": 495}
+          {"label": "440 V / 3 ph / 60 hz ($ 495 USD)", "price": 530},
+          {"label": "480 V / 3 ph / 60 hz ($ 495 USD)", "price": 530}
         ]
       },
-      "Gas Flush ($ 995 USD)": {"type": "checkbox", "price": 995},
-      "Positive Air Sealer (for use in low vacuum and gas flush applications) ($ 695 USD)": {
+      "Gas Flush ($ 1,095 USD)": {"type": "checkbox", "price": 1095},
+      "Positive Air Sealer (for use in low vacuum and gas flush applications) ($ 745 USD)": {
         "type": "checkbox",
-        "price": 695
+        "price": 745
       }
     }
   },
   "CM780.docx": {
-    "base": 20995,
+    "base": 22,995,
     "options": {
       "Voltage": {
         "type": "select",
         "choices": [
           {"label": "208 V / 3 ph / 60 hz ($ 0 USD)", "price": 0},
-          {"label": "400 V / 3 ph / 50 hz ($ 495 USD)", "price": 495},
-          {"label": "480 V / 3 ph / 60 hz ($ 495 USD)", "price": 495}
+          {"label": "400 V / 3 ph / 50 hz ($ 530 USD)", "price": 530},
+          {"label": "480 V / 3 ph / 60 hz ($ 530 USD)", "price": 530}
         ]
       },
       "Lid size": {
         "type": "select",
         "choices": [
           {"label": "8\" Lid Height ($ 0 USD)", "price": 0},
-          {"label": "10\" Lid Height ($ 995 USD)", "price": 995}
+          {"label": "10\" Lid Height ($ 1095 USD)", "price": 1095}
         ]
       },
       "Mechanical Cut w/ Positive Air Sealer": {
@@ -86,10 +86,10 @@
           {"label": "1x 200m3 pump (4.2 kw = 5.71 hp) ($ 0 USD)", "price": 0}
         ]
       },
-      "Gas Flush ($ 995 USD)": {"type": "checkbox", "price": 995},
-      "Positive Air Sealer (for use in low vacuum and gas flush applications) ($ 695 USD)": {
+      "Gas Flush ($ 1095 USD)": {"type": "checkbox", "price": 1095},
+      "Positive Air Sealer (for use in low vacuum and gas flush applications) ($ 745 USD)": {
         "type": "checkbox",
-        "price": 695
+        "price": 745
       },
       "Bi-active Sealing System ($ 1,295 USD)": {"type": "checkbox", "price": 1295},
       "Sample parts kit included": {
@@ -101,29 +101,29 @@
     }
   },
   "CM860.docx": {
-    "base": 24995,
+    "base": 26995,
     "options": {
       "Voltage": {
         "type": "select",
         "choices": [
           {"label": "208 V / 3 ph / 60 hz / 40A ($ 0 USD)", "price": 0},
-          {"label": "400 V / 3 ph / 50 hz ($ 495 USD)", "price": 495},
-          {"label": "480 V / 3 ph / 60 hz ($ 495 USD)", "price": 495}
+          {"label": "400 V / 3 ph / 50 hz ($ 495 USD)", "price": 530},
+          {"label": "480 V / 3 ph / 60 hz ($ 495 USD)", "price": 530}
         ]
       },
       "Lid size": {
         "type": "select",
         "choices": [
           {"label": "8\" Lid Height ($ 0 USD)", "price": 0},
-          {"label": "10\" Lid Height ($ 995 USD)", "price": 995},
-          {"label": "12\" Lid Height ($ 1,995 USD)", "price": 1995}
+          {"label": "10\" Lid Height ($ 995 USD)", "price": 1095},
+          {"label": "12\" Lid Height ($ 1,995 USD)", "price": 2150}
         ]
       },
       "Operation": {
         "type": "select",
         "choices": [
           {"label": "Automatic lid with NO mechanical cut ($ 0 USD)", "price": 0},
-          {"label": "Automatic lid, WITH mechanical cut (distance between seal bars: 655mm) ($ 3,495 USD)", "price": 3495}
+          {"label": "Automatic lid, WITH mechanical cut (distance between seal bars: 655mm) ($ 3,745 USD)", "price": 3745}
         ]
       },
       "Pump Options": {
@@ -132,9 +132,9 @@
           {"label": "1x 300m3 pump (6.6kw=8.97HP) ($ 0 USD)", "price": 0}
         ]
       },
-      "Bi-active Sealing System ($ 1,995 USD)": {"type": "checkbox", "price": 1995},
-      "Gas Flush ($ 995 USD)": {"type": "checkbox", "price": 995},
-      "Positive Air Sealer ($ 695 USD)": {"type": "checkbox", "price": 695},
+      "Bi-active Sealing System ($ 1,400 USD)": {"type": "checkbox", "price": 1400},
+      "Gas Flush ($ 1095 USD)": {"type": "checkbox", "price": 1095},
+      "Positive Air Sealer ($ 745 USD)": {"type": "checkbox", "price": 745},
       "Sample parts kit included": {
         "type": "select",
         "choices": [
@@ -144,29 +144,29 @@
     }
   },
   "CM900A.docx": {
-    "base": 32995,
+    "base": 35995,
     "options": {
       "Voltage": {
         "type": "select",
         "choices": [
           {"label": "208 V / 3 ph / 60 hz / 40A ($ 0 USD)", "price": 0},
-          {"label": "400 V / 3 ph / 50 hz ($ 495 USD)", "price": 495},
-          {"label": "480 V / 3 ph / 60 hz ($ 495 USD)", "price": 495}
+          {"label": "400 V / 3 ph / 50 hz ($ 530 USD)", "price": 530},
+          {"label": "480 V / 3 ph / 60 hz ($ 530 USD)", "price": 530}
         ]
       },
       "Lid size": {
         "type": "select",
         "choices": [
           {"label": "8\" Lid Height ($ 0 USD)", "price": 0},
-          {"label": "10\" Lid Height ($ 1,000 USD)", "price": 1000},
-          {"label": "12\" Lid Height ($ 2,000 USD)", "price": 2000}
+          {"label": "10\" Lid Height ($ 1,095 USD)", "price": 1095},
+          {"label": "12\" Lid Height ($ 2,150 USD)", "price": 2150}
         ]
       },
       "Operation": {
         "type": "select",
         "choices": [
           {"label": "Automatic lid with NO mechanical cut ($ 0 USD)", "price": 0},
-          {"label": "Automatic lid, WITH mechanical cut (distance between seal bars: 815mm) ($ 4,995 USD)", "price": 4995}
+          {"label": "Automatic lid, WITH mechanical cut (distance between seal bars: 815mm) ($ 3,745 USD)", "price": 3,745}
         ]
       },
       "Pump Options": {
@@ -175,47 +175,47 @@
           {"label": "300 m3 (6.6kw=8.97HP) ($ 0 USD)", "price": 0}
         ]
       },
-      "Bi-active Sealing System ($ 1,995 USD)": {"type": "checkbox", "price": 1995},
-      "Gas Flush ($ 995 USD)": {"type": "checkbox", "price": 995},
-      "Positive Air Sealer ($ 695 USD)": {"type": "checkbox", "price": 695}
+      "Bi-active Sealing System ($ 1,400 USD)": {"type": "checkbox", "price": 1400},
+      "Gas Flush ($ 1095 USD)": {"type": "checkbox", "price": 1095},
+      "Positive Air Sealer ($ 745 USD)": {"type": "checkbox", "price": 745}
     }
   },
   "CM1100.docx": {
-    "base": 34995,
+    "base": 37995,
     "options": {
       "Voltage": {
         "type": "select",
         "choices": [
           {"label": "208 V / 3 ph / 60 hz / 40A ($ 0 USD)", "price": 0},
-          {"label": "400 V / 3 ph / 50 hz ($ 495 USD)", "price": 495},
-          {"label": "480 V / 3 ph / 60 hz ($ 495 USD)", "price": 495}
+          {"label": "400 V / 3 ph / 50 hz ($ 530 USD)", "price": 530},
+          {"label": "480 V / 3 ph / 60 hz ($ 530 USD)", "price": 530}
         ]
       },
       "Lid size": {
         "type": "select",
         "choices": [
           {"label": "10\" Lid Height ($ 0 USD)", "price": 0},
-          {"label": "12\" Lid Height ($ 1,000 USD)", "price": 1000}
+          {"label": "12\" Lid Height ($ 1,095 USD)", "price": 1095}
         ]
       },
       "Operation": {
         "type": "select",
         "choices": [
           {"label": "Automatic lid with NO mechanical cut ($ 0 USD)", "price": 0},
-          {"label": "Automatic lid, WITH mechanical cut (distance between seal bars: 815mm) ($ 4,995 USD)", "price": 4995}
+          {"label": "Automatic lid, WITH mechanical cut (distance between seal bars: 815mm) ($ 5,355 USD)", "price": 5355}
         ]
       },
       "Pump Options": {
         "type": "select",
         "choices": [
           {"label": "300 m3 (6.6kw=8.97HP) ($ 0 USD)", "price": 0},
-          {"label": "2 x 200 m3 (pumps internally mounted, 6.6kw=8.97HP each) ($ 13,995 USD)", "price": 13995},
-          {"label": "2 x 300 m3 (pumps internally mounted, 6.6kw=8.97HP each) ($ 13,995 USD)", "price": 13995}
+          {"label": "2 x 200 m3 (pumps internally mounted, 4.2kw=5.71HP each) ($ 8,575 USD)", "price": 8575},
+          {"label": "2 x 300 m3 (pumps internally mounted, 6.6kw=8.97HP each) ($ 15,000 USD)", "price": 15000}
         ]
       },
-      "Bi-active Sealing System ($ 1,995 USD)": {"type": "checkbox", "price": 1995},
-      "Gas Flush ($ 995 USD)": {"type": "checkbox", "price": 995},
-      "Positive Air Sealer ($ 695 USD)": {"type": "checkbox", "price": 695}
+      "Bi-active Sealing System ($ 2,100 USD)": {"type": "checkbox", "price": 2100},
+      "Gas Flush ($ 1,095 USD)": {"type": "checkbox", "price": 1095},
+      "Positive Air Sealer ($ 745 USD)": {"type": "checkbox", "price": 745}
     }
   },
   "TS420.docx": {
@@ -285,10 +285,10 @@
       "Configuración de matriz": {
         "type": "select",
         "choices": [
-          {"label": "1 UP ($ 6,995 USD)", "price": 6995},
-          {"label": "2 UP ($ 7,595 USD)", "price": 7595},
-          {"label": "3 UP ($ 8,195 USD)", "price": 8195},
-          {"label": "4 UP ($ 8,795 USD)", "price": 8795},
+          {"label": "1 UP ($ 3,995 USD)", "price": 3995},
+          {"label": "2 UP ($ 4,595 USD)", "price": 4595},
+          {"label": "3 UP ($ 5,195 USD)", "price": 5195},
+          {"label": "4 UP ($ 5,795 USD)", "price": 5795},
           {"label": "5 UP ($ 6,395 USD)", "price": 6395},
           {"label": "6 UP ($ 6,995 USD)", "price": 6995}
         ]
