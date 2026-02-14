@@ -1,0 +1,688 @@
+{
+  "name": "Cotizador VC999 - Final (solo precios mal)",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "id": "8ee620fa-c52f-4005-9eca-0d1bd50c2a28",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -432,
+        176
+      ],
+      "webhookId": "70f7f3d5-9ce9-447a-b8d8-8f902fcc04a8",
+      "credentials": {
+        "telegramApi": {
+          "id": "eL0hlLYzdSvIyb3H",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const update = $json;\nlet chatId, text = '';\n\nif (update.message) {\n  chatId = update.message.chat.id;\n  text = update.message.text || '';\n} else if (update.callback_query) {\n  chatId = update.callback_query.message.chat.id;\n  text = update.callback_query.data || '';\n}\n\nreturn [{ json: { chatId, text, raw: update } }];"
+      },
+      "id": "c8ffdba4-fae6-46a3-a9dc-56cbed670a89",
+      "name": "Normalize Telegram",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $getWorkflowStaticData('global');\nconst catalog = data.catalog;\nconst incomingText = String($json?.text || '').trim();\nconst isReloadCommand = incomingText === '/reload';\nlet memoryEmpty = true;\n\nif (catalog && Object.keys(catalog).length > 0) {\n  let hasOptions = false;\n\n  for (const model of Object.values(catalog)) {\n    if (!model || !Array.isArray(model.steps)) continue;\n    for (const step of model.steps) {\n      if (!step || !Array.isArray(step.options)) continue;\n      if (step.options.length > 0) {\n        hasOptions = true;\n        break;\n      }\n    }\n    if (hasOptions) break;\n  }\n\n  memoryEmpty = !hasOptions;\n}\n\nif (isReloadCommand) memoryEmpty = true;\n\nconst items = $input.all();\nreturn items.map(item => ({ json: { ...item.json, memoryEmpty, shouldReload: isReloadCommand, isReloadCommand } }));"
+      },
+      "id": "0a0a5963-3a08-44e2-a76f-c651cd19c2c0",
+      "name": "Verificar Memoria",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.memoryEmpty }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "51d49bbb-d9eb-401f-80d7-b79777ca0816",
+      "name": "¿Cargar BD?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        240,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY",
+          "mode": "list",
+          "cachedResultName": "Catalogo_Maquinas_VC999_full_v3",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1338588165,
+          "mode": "list",
+          "cachedResultName": "DB_Maquinas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY/edit#gid=1338588165"
+        },
+        "options": {}
+      },
+      "id": "5a834498-d3c9-47f6-a7be-a1072a6063c0",
+      "name": "Leer DB_Maquinas",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        464,
+        96
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "y849MEubVdTfoMXc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY",
+          "mode": "list",
+          "cachedResultName": "Catalogo_Maquinas_VC999_full_v3",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1030515664,
+          "mode": "list",
+          "cachedResultName": "DB_Opciones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY/edit#gid=1030515664"
+        },
+        "options": {}
+      },
+      "id": "7485a071-5915-439d-b3d9-50ed42516247",
+      "name": "Leer DB_Opciones",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        688,
+        96
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "y849MEubVdTfoMXc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY",
+          "mode": "list",
+          "cachedResultName": "Catalogo_Maquinas_VC999_full_v3",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "DB_Precios",
+          "mode": "name"
+        },
+        "returnAll": false,
+        "limit": 1000,
+        "options": {
+          "valueRenderMode": "UNFORMATTED_VALUE"
+        }
+      },
+      "id": "0f68bf47-5fd8-4320-8e97-8f9d5f11ecaa",
+      "name": "Leer DB_Precios",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        912,
+        96
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "y849MEubVdTfoMXc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const toNum = (v) => {\n  if (v === null || v === undefined) return 0;\n  const s = String(v).replace(/[^0-9.\\-]/g, '');\n  const n = parseFloat(s);\n  return Number.isFinite(n) ? n : 0;\n};\nconst toInt = (v, d=0) => {\n  const n = parseInt(String(v), 10);\n  return Number.isFinite(n) ? n : d;\n};\nconst normKey = (k) => String(k || '').toLowerCase().trim().replace(/\\s+/g,'').replace(/[_\\-]/g,'');\nconst getVal = (obj, terms) => {\n  if (!obj) return undefined;\n  const keys = Object.keys(obj);\n  const map = new Map(keys.map(k => [normKey(k), k]));\n  for (const t of terms) {\n    const nk = normKey(t);\n    if (map.has(nk)) return obj[map.get(nk)];\n  }\n  for (const t of terms) {\n    const nk = normKey(t);\n    const partial = keys.find(k => normKey(k).includes(nk));\n    if (partial) return obj[partial];\n  }\n  return undefined;\n};\nconst norm = (v) => String(v ?? '').trim().replace(/\\s+/g, ' ');\nconst normLower = (v) => norm(v).toLowerCase();\nconst optionSeen = new WeakMap();\nconst maquinasRows = $items('Leer DB_Maquinas').map(i => i.json);\nconst opcionesRows = $items('Leer DB_Opciones').map(i => i.json);\nconst preciosRows = $items('Leer DB_Precios').map(i => i.json);\nconst catalog = {};\nconst priceLookup = new Map();\nconst basePriceOptionsByModel = new Map();\nconst priceKey = (modelo, paso, opcion) => `${normLower(modelo)}||${normLower(paso)}||${normLower(opcion)}`;\nconst isBaseStep = (s) => {\n  const x = normLower(s);\n  return !x || ['base','baseprice','precio_base','preciobase','pricebase','base_price'].includes(x);\n};\n\nfor (const row of preciosRows) {\n  const modelo = getVal(row, ['modelo','model','maquina','maquina_id']);\n  const pasoId = getVal(row, ['paso_id','step_id','paso','step']);\n  const opcion = getVal(row, ['opcion','opcion_label','opcion_valor','label','value','nombre_opcion']);\n  const precio = toNum(getVal(row, ['precio','price','costo','opcion_precio','extra']));\n  if (!modelo || !opcion) continue;\n\n  if (isBaseStep(pasoId)) {\n    const modelKey = String(modelo);\n    const arr = basePriceOptionsByModel.get(modelKey) || [];\n    arr.push({ key: `BP_${arr.length + 1}`, label: String(opcion), price: precio });\n    basePriceOptionsByModel.set(modelKey, arr);\n    continue;\n  }\n\n  priceLookup.set(priceKey(modelo, pasoId, opcion), precio);\n}\n\nfor (const row of maquinasRows) {\n  const modelo = getVal(row, ['modelo','model','id','maquina_id']);\n  if (!modelo) continue;\n  const nombre = getVal(row, ['nombre','name','descripcion','description']) ?? modelo;\n  const basePrice = toNum(getVal(row, ['precio_base','base_price','price','precio','costo']));\n  const plantilla = getVal(row, ['plantilla','template','docx','archivo']);\n  const modelId = String(modelo);\n  const fromSheet = (basePriceOptionsByModel.get(modelId) || []).filter(p => Number.isFinite(p.price));\n  const defaultOption = [{ key: 'BASE', label: 'Precio base', price: basePrice }];\n  const priceOptions = fromSheet.length > 0 ? fromSheet : defaultOption;\n\n  catalog[modelId] = {\n    id: modelId,\n    name: String(nombre),\n    basePrice,\n    priceOptions,\n    plantilla: plantilla ? String(plantilla) : undefined,\n    steps: []\n  };\n}\n\nfor (const row of opcionesRows) {\n  const modelo = getVal(row, ['modelo','model','maquina','maquina_id']);\n  if (!modelo) continue;\n  const m = catalog[String(modelo)];\n  if (!m) continue;\n  const pasoId = getVal(row, ['paso_id','step_id','paso','step']);\n  const pregunta = getVal(row, ['pregunta','paso_pregunta','question','texto']);\n  const orden = toInt(getVal(row, ['paso_orden','order','orden']), 0);\n  if (!pasoId) continue;\n  let step = m.steps.find(s => s.id === String(pasoId));\n  if (!step) {\n    const questionStr = norm(pregunta);\n    step = { id: String(pasoId), question: questionStr || 'Selecciona una opción', order: orden, options: [] };\n    m.steps.push(step);\n  }\n  const rawLabel = getVal(row, ['opcion_label','label','etiqueta','nombre_opcion','opcion']) || getVal(row, ['opcion label','opcion_label','opcionlabel']);\n  const rawValue = getVal(row, ['opcion_valor','value','valor','code','key']) || rawLabel;\n  const fallbackPrice = toNum(getVal(row, ['opcion_precio','price','precio','costo','extra']));\n  const labelStr = norm(rawLabel || rawValue);\n  let valueStr = norm(rawValue || rawLabel || labelStr);\n  if (labelStr === '') continue;\n  if (valueStr === '') valueStr = labelStr;\n  const modelKey = String(modelo);\n  const priceFromSheet = priceLookup.get(priceKey(modelKey, pasoId, valueStr)) ?? priceLookup.get(priceKey(modelKey, pasoId, labelStr));\n  const price = Number.isFinite(priceFromSheet) ? priceFromSheet : fallbackPrice;\n  const key = `${normLower(labelStr)}|${normLower(valueStr)}`;\n  let seenForStep = optionSeen.get(step);\n  if (!seenForStep) { seenForStep = new Set(); optionSeen.set(step, seenForStep); }\n  if (seenForStep.has(key)) continue;\n  seenForStep.add(key);\n  step.options.push({ label: labelStr, value: valueStr, price });\n}\n\nfor (const mid of Object.keys(catalog)) {\n  catalog[mid].steps.sort((a,b) => (a.order ?? 0) - (b.order ?? 0));\n}\n\nconst input = $input.first().json;\nconst staticData = $getWorkflowStaticData('global');\nstaticData.catalog = catalog;\nreturn [{ json: { ...input, catalogLoaded: true, models: Object.keys(catalog).length } }];"
+      },
+      "id": "c2895282-ae27-4f29-8251-374b1009515b",
+      "name": "Guardar en Memoria",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ ($json.isReloadCommand || $json.shouldReload) ? '✅ Catálogo actualizado\\n\\n👋 *Bienvenido al Cotizador VC999*\\n\\nSelecciona el modo:' : '👋 *Bienvenido al Cotizador VC999*\\n\\nSelecciona el modo:' }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🧠 Cotización Avanzada",
+                    "additionalFields": {
+                      "callback_data": "MENU|AVANZADA"
+                    }
+                  },
+                  {
+                    "text": "⚡️ Cotización Rápida",
+                    "additionalFields": {
+                      "callback_data": "MODE|FAST"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "bc4569be-fefa-45a0-9d55-50f5b9b95b50",
+      "name": "Enviar Menú",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1696,
+        272
+      ],
+      "webhookId": "28481a81-2d6a-4ccf-9a2c-837d53239147",
+      "credentials": {
+        "telegramApi": {
+          "id": "eL0hlLYzdSvIyb3H",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const { chatId, text, raw, shouldReload: inReload } = $json;\nconst staticData = $getWorkflowStaticData('global');\nstaticData.cot = staticData.cot || {};\nconst hasSession = !!staticData.cot?.[chatId];\nlet action = null;\nconst incomingText = String(text || '').trim();\nconst isReloadCommand = incomingText === '/reload';\nconst shouldReload = !!inReload || isReloadCommand;\n\nconst setMode = (mode) => {\n  if (!mode) return;\n  const current = staticData.cot[chatId] || {};\n  staticData.cot[chatId] = { ...current, mode: mode.toUpperCase() };\n};\n\nif (raw?.message?.text && raw.message.text.startsWith('/')) {\n  action = 'START';\n  staticData.cot[chatId] = {};\n} else if (raw?.callback_query?.data) {\n  const data = raw.callback_query.data;\n  if (data === 'MENU|AVANZADA' || data === 'MODE|ADV') {\n    setMode('ADV');\n    action = 'MENU_SELECTION';\n  } else if (data === 'MODE|FAST') {\n    setMode('FAST');\n    action = 'MENU_SELECTION';\n  } else {\n    action = 'COTIZACION_FLOW';\n  }\n} else if (raw?.message?.text && !raw.message.text.startsWith('/') && hasSession) {\n  action = 'COTIZACION_FLOW';\n}\n\nreturn [{ json: { chatId, text, action, shouldReload, isReloadCommand } }];"
+      },
+      "id": "a86dbec8-4b9b-47b5-9763-62a95450a235",
+      "name": "Router Maestro",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "rule-1-condition-1",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "START",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "rule-2-condition-1",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "MENU_SELECTION",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "rule-3-condition-1",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "COTIZACION_FLOW",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b8a6023b-5c5d-4993-818d-12cd77e60709",
+      "name": "Switch Maestro",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        1360,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ !!($json.quotePayload && $json.quotePayload.machine && $json.quotePayload.customer && $json.quotePayload.customer.email && ($json.userState?.stage ? $json.userState.stage === \"done\" : true)) }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "446e4825-c811-4636-be43-97b5d1f3e1b1",
+      "name": "¿Terminó?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1824,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot8335208719:AAHyaYQ2wKfjGEWOf9V1Zrp6KOE7HYWbJrY/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ ({ chat_id: $json.chatId, text: $json.text, parse_mode: \"Markdown\", reply_markup: $json.reply_markup || {} }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2192,
+        896
+      ],
+      "id": "95aaa646-5d62-4d8d-a696-e3f327f7e754",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst catalog = staticData.catalog || {};\nconst models = Object.keys(catalog);\nif (models.length === 0) {\n  return [{ json: { chatId: $json.chatId, text: '⚠️ La memoria está vacía. Por favor ejecuta /start para recargar.', reply_markup: {} } }];\n}\nconst keyboard = [];\nlet row = [];\nmodels.forEach((model, index) => {\n  row.push({ text: model, callback_data: `${model}|START` });\n  if (row.length === 2 || index === models.length - 1) { keyboard.push(row); row = []; }\n});\nconst prefix = ($json.isReloadCommand || $json.shouldReload) ? '✅ Catálogo actualizado\\n\\n' : '';\nreturn [{ json: { chatId: $json.chatId, text: `${prefix}🏭 *Catálogo VC999 Disponible*\\n\\nSelecciona la máquina que deseas cotizar:`, reply_markup: { inline_keyboard: keyboard } } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        480
+      ],
+      "id": "b626a0da-c93c-43e9-a15f-4660a635a27b",
+      "name": "Generar menú dinámico"
+    },
+    {
+      "parameters": {
+        "jsCode": "const DEBUG = false;\nconst staticData = $getWorkflowStaticData('global');\nconst catalog = staticData.catalog || {};\nstaticData.cot = staticData.cot || {};\nconst chatId = $json.chatId ?? $json.raw?.message?.chat?.id ?? $json.raw?.callback_query?.message?.chat?.id;\nconst text = $json.text ?? '';\nif (!chatId) {\n  return [{ json: { ok: false, error: 'missing_chatId', text: '⚠️ Falta chatId. Revisa el nodo Normalize Telegram.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState: null } }];\n}\nconst money = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });\nconst toNum = (v) => { const s = String(v ?? '').replace(/[^0-9.\\-]/g, ''); const n = parseFloat(s); return Number.isFinite(n) ? n : 0; };\nconst normText = (v) => String(v ?? '').trim().replace(/\\s+/g, ' ');\nconst optionKey = (label, value) => `${normText(label).toLowerCase()}|${normText(value ?? label).toLowerCase()}`;\nconst humanizeStepId = (stepId) => {\n  const safe = String(stepId ?? '').trim();\n  const withSpaces = safe.replace(/[_-]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim();\n  if (!withSpaces) return 'Paso';\n  return withSpaces.split(' ').filter(Boolean).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');\n};\nconst resolveMode = (state) => (state?.mode || 'ADV').toUpperCase();\nconst formatSelections = (selections) => Array.isArray(selections) && selections.length > 0 ? selections.map((sel) => { const stepLabel = humanizeStepId(sel.step ?? 'Paso'); const priceText = toNum(sel.price) > 0 ? ` (+$${money(sel.price)} USD)` : ' (+$0 USD)'; return `- ${stepLabel}: ${sel.value ?? 'N/A'}${priceText}`; }) : ['- Sin opciones'];\nconst startFastDefaults = (userState, machine) => {\n  const steps = Array.isArray(machine.steps) ? machine.steps : [];\n  const selections = [];\n  let totalPrice = toNum(userState.basePrice);\n  steps.forEach((step, idx) => {\n    const options = Array.isArray(step?.options) ? step.options : [];\n    if (options.length === 0) return;\n    const defaultOpt = options.find((opt) => String(opt.label ?? '').includes('(Default)')) || options[0];\n    const chosenPrice = toNum(defaultOpt.price);\n    selections.push({ step: step?.id ?? `step_${idx + 1}`, value: defaultOpt.value ?? defaultOpt.label ?? 'NA', price: chosenPrice });\n    totalPrice += chosenPrice;\n  });\n  userState.selections = selections;\n  userState.totalPrice = totalPrice;\n  userState.stepIndex = steps.length;\n  userState.stage = 'await_customer_name';\n  return { text: '⚡️ *Modo Rápido activado*\\nSe seleccionaron las opciones por defecto. Escribe el *nombre del cliente*.', reply_markup: {} };\n};\nlet userState = staticData.cot[chatId];\nconst isCallback = typeof text === 'string' && text.includes('|');\nconst isStartMachine = isCallback && text.endsWith('|START');\nconst isOpt = isCallback && text.includes('|OPT|');\nconst isBasePick = isCallback && text.includes('|BP|');\nlet fastIntroResponse = null;\n\nif (isStartMachine) {\n  const model = text.split('|')[0];\n  const machine = catalog[model];\n  if (!machine) return [{ json: { chatId, text: '⚠️ Error: Máquina no encontrada. Ejecuta /start.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState: staticData.cot[chatId] || null } }];\n  const mode = resolveMode(userState);\n  const options = Array.isArray(machine.priceOptions) && machine.priceOptions.length ? machine.priceOptions : [{ key: 'BASE', label: 'Precio base', price: toNum(machine.basePrice) }];\n  userState = { mode, stage: 'config', machine: model, stepIndex: 0, selections: [], basePrice: toNum(options[0]?.price ?? machine.basePrice), totalPrice: toNum(options[0]?.price ?? machine.basePrice), customer: {}, advisor: '' };\n\n  if (options.length > 1) {\n    userState.stage = 'pick_base_price';\n    const inline_keyboard = options.map((opt, idx) => [{ text: `${opt.label} ($${money(opt.price)} USD)`, callback_data: `${model}|BP|${idx}` }]);\n    staticData.cot[chatId] = userState;\n    return [{ json: { chatId, text: `💰 Selecciona el precio base para *${model}*:`, reply_markup: { inline_keyboard }, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState } }];\n  }\n\n  if (mode === 'FAST') fastIntroResponse = startFastDefaults(userState, machine);\n}\n\nif (isBasePick) {\n  const [model, , idxRaw] = text.split('|');\n  const machine = catalog[model];\n  if (!userState || !machine || userState.machine !== model) return [{ json: { chatId, text: '⚠️ Sesión expirada o modelo no coincide. Ejecuta /start.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState: staticData.cot[chatId] || null } }];\n  const options = Array.isArray(machine.priceOptions) && machine.priceOptions.length ? machine.priceOptions : [{ key: 'BASE', label: 'Precio base', price: toNum(machine.basePrice) }];\n  const idx = Math.max(0, Math.min(options.length - 1, Number(idxRaw)));\n  const selected = options[idx] || options[0];\n  userState.basePrice = toNum(selected.price);\n  userState.totalPrice = toNum(selected.price);\n  userState.stage = 'config';\n  if (userState.mode === 'FAST') fastIntroResponse = startFastDefaults(userState, machine);\n}\n\nif (isOpt) {\n  const parts = text.split('|');\n  const model = parts[0];\n  const stepId = parts[2];\n  const val = parts[3];\n  const price = toNum(parts[4]);\n  if (!userState || userState.machine !== model) return [{ json: { chatId, text: '⚠️ Sesión expirada o modelo no coincide. Ejecuta /start.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState: staticData.cot[chatId] || null } }];\n  if (userState.mode === 'FAST') return [{ json: { chatId, text: '⚡️ Estás en Modo Rápido. Las opciones ya fueron auto-seleccionadas. Envía el nombre del cliente.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState } }];\n  userState.selections.push({ step: stepId, value: val, price });\n  userState.totalPrice += price;\n  userState.stepIndex += 1;\n}\n\nif (!isCallback && userState) {\n  const msg = normText(text || '');\n  if (userState.stage === 'await_customer_name') { userState.customer.name = msg; userState.stage = 'await_customer_email'; staticData.cot[chatId] = userState; return [{ json: { chatId, text: '📝 Ahora escribe el *correo del cliente*:', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState } }]; }\n  if (userState.stage === 'await_customer_email') { userState.customer.email = msg; userState.stage = 'await_advisor'; staticData.cot[chatId] = userState; return [{ json: { chatId, text: '🧑‍💼 Ahora escribe el *nombre del ASESOR*:', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState } }]; }\n  if (userState.stage === 'await_advisor') {\n    userState.advisor = msg; userState.stage = 'done';\n    const payload = { machine: userState.machine, basePrice: toNum(userState.basePrice), totalPrice: toNum(userState.totalPrice), selections: userState.selections, customer: userState.customer, advisor: userState.advisor };\n    userState.payloadFinal = payload; staticData.cot[chatId] = userState;\n    const optionLines = formatSelections(userState.selections).join('\\n');\n    const summaryText = `🛠️ *Cotización ${userState.machine}*\\n*Máquina:* ${userState.machine}\\n*Base:* $${money(payload.basePrice)} USD\\n*Opciones:*\\n${optionLines}\\n*Total:* $${money(payload.totalPrice)} USD\\n*Cliente:* ${userState.customer.name || 'N/A'}\\n*Correo:* ${userState.customer.email || 'N/A'}\\n*Asesor:* ${userState.advisor || 'N/A'}\\n✅ Confirmo datos. Procediendo a generar y enviar PDF.`;\n    return [{ json: { chatId, text: summaryText, reply_markup: {}, isFinished: true, isReadyToGenerate: true, quotePayload: payload, userState } }];\n  }\n}\n\nif (!userState) return [{ json: { chatId, text: 'Usa /start y selecciona una máquina para iniciar.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState: null } }];\nconst machineConfig = catalog[userState.machine];\nif (!machineConfig) return [{ json: { chatId, text: '⚠️ Catálogo no disponible. Ejecuta /start para recargar.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState } }];\n\nlet response = fastIntroResponse || {};\nlet isFinished = !!fastIntroResponse;\nif (!isFinished && userState.stage === 'config') {\n  const currentIndex = userState.stepIndex;\n  if (currentIndex < machineConfig.steps.length) {\n    const step = machineConfig.steps[currentIndex];\n    const stepOptions = Array.isArray(step.options) ? step.options : [];\n    if (stepOptions.length === 0) {\n      const debugInfo = DEBUG ? ` [model=${userState.machine}, step=${step.id ?? currentIndex + 1}]` : '';\n      response = { text: `⚠️ No hay opciones disponibles para el paso \"${step.id ?? currentIndex + 1}\". Usa /start para recargar.${debugInfo}`, reply_markup: {} };\n    } else {\n      const inline_keyboard = [];\n      const seenOptions = new Set();\n      stepOptions.forEach(opt => {\n        const price = toNum(opt.price);\n        const value = opt.value ?? opt.label ?? 'NA';\n        const key = optionKey(opt.label ?? value, value);\n        if (seenOptions.has(key)) return;\n        seenOptions.add(key);\n        const priceText = price > 0 ? ` (+$${money(price)})` : '';\n        inline_keyboard.push([{ text: `${opt.label ?? value}${priceText}`, callback_data: `${userState.machine}|OPT|${step.id}|${value}|${price}` }]);\n      });\n      response = { text: `🛠️ *${userState.machine}* (Paso ${currentIndex + 1}/${machineConfig.steps.length})\\n💰 Total: $${money(userState.totalPrice)} USD\\n\\nSelecciona: *${step.question || humanizeStepId(step.id || `Paso ${currentIndex + 1}`)}*`, reply_markup: { inline_keyboard } };\n    }\n  } else {\n    userState.stage = 'await_customer_name';\n    isFinished = true;\n    response = { text: `✅ *Cotización lista*\\nModelo: *${userState.machine}*\\nTotal: *$${money(userState.totalPrice)} USD*\\n\\nEscribe el *NOMBRE del Cliente*:`, reply_markup: {} };\n  }\n} else if (userState.stage === 'await_customer_name') { isFinished = true; response = { text: '📝 Ahora escribe el *NOMBRE del cliente*:', reply_markup: {} }; }\nelse if (userState.stage === 'await_customer_email') { isFinished = true; response = { text: '📝 Ahora escribe el *correo del cliente*:', reply_markup: {} }; }\nelse if (userState.stage === 'await_advisor') { isFinished = true; response = { text: '🧑‍💼 Ahora escribe el *nombre del ASESOR*:', reply_markup: {} }; }\nelse if (userState.stage === 'done') { const payload = userState.payloadFinal || { machine: userState.machine, basePrice: toNum(userState.basePrice), totalPrice: toNum(userState.totalPrice), selections: userState.selections, customer: userState.customer, advisor: userState.advisor || '' }; response = { text: '✅ Listo. Procediendo a generar y enviar PDF.', reply_markup: {}, quotePayload: payload, isReadyToGenerate: true }; isFinished = true; }\n\nstaticData.cot[chatId] = userState;\nreturn [{ json: { chatId, text: response.text || '', reply_markup: response.reply_markup || {}, isFinished: !!isFinished, isReadyToGenerate: !!(response.quotePayload), quotePayload: response.quotePayload || null, userState } }];"
+      },
+      "id": "c44f6661-6c95-475c-a4dc-a166252e44fd",
+      "name": "Lógica Cotizador",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY",
+          "mode": "list",
+          "cachedResultName": "Catalogo_Maquinas_VC999_full_v3",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1338588165,
+          "mode": "list",
+          "cachedResultName": "DB_Maquinas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY/edit#gid=1338588165"
+        },
+        "options": {}
+      },
+      "id": "06be28a7-360a-418a-9789-237b0e32005f",
+      "name": "Leer DB_Maquinas Precio Base",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2032,
+        688
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "y849MEubVdTfoMXc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY",
+          "mode": "list",
+          "cachedResultName": "Catalogo_Maquinas_VC999_full_v3",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "DB_Precios",
+          "mode": "name"
+        },
+        "returnAll": false,
+        "limit": 1000,
+        "options": {
+          "valueRenderMode": "UNFORMATTED_VALUE"
+        }
+      },
+      "id": "5cbab8f1-6fc8-42b5-89bd-381fe8d0583e",
+      "name": "Leer DB_Precios FastAPI",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2160,
+        688
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "y849MEubVdTfoMXc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $items('¿Terminó?')[0]?.json ?? $json;\nconst userState = input.userState || {};\nconst customer = userState.customer || {};\nconst toNum = (v) => { const s = String(v ?? '').replace(/[^0-9.\\-]/g, ''); const n = parseFloat(s); return Number.isFinite(n) ? n : 0; };\nconst normKey = (k) => String(k || '').toLowerCase().trim().replace(/\\s+/g,'').replace(/[_\\-]/g,'');\nconst normLower = (v) => String(v ?? '').trim().toLowerCase();\nconst getVal = (obj, terms) => { if (!obj) return undefined; const keys = Object.keys(obj); const map = new Map(keys.map(k => [normKey(k), k])); for (const t of terms) { const nk = normKey(t); if (map.has(nk)) return obj[map.get(nk)]; } for (const t of terms) { const nk = normKey(t); const partial = keys.find(k => normKey(k).includes(nk)); if (partial) return obj[partial]; } return undefined; };\nconst machine = userState.machine ?? input.quotePayload?.machine ?? '';\nconst machineKey = String(machine ?? '').trim().toLowerCase();\nconst maquinasRows = $items('Leer DB_Maquinas Precio Base').map((i) => i.json);\nconst preciosRows = $items('Leer DB_Precios FastAPI').map((i) => i.json);\nlet basePriceFromSheet;\nfor (const row of maquinasRows) { const modelo = getVal(row, ['modelo','model','id','maquina_id']); if (!modelo) continue; if (String(modelo).trim().toLowerCase() === machineKey) { basePriceFromSheet = toNum(getVal(row, ['precio_base','base_price','price','precio','costo'])); break; } }\nconst resolvedBasePrice = Number.isFinite(Number(userState.basePrice)) ? Number(userState.basePrice) : (Number.isFinite(basePriceFromSheet) ? basePriceFromSheet : Number(userState.totalPrice ?? 0));\nconst priceLookup = new Map();\nconst priceKey = (modelo, paso, opcion) => `${normLower(modelo)}||${normLower(paso)}||${normLower(opcion)}`;\nfor (const row of preciosRows) { const modelo = getVal(row, ['modelo','model','maquina','maquina_id']); const pasoId = getVal(row, ['paso_id','step_id','paso','step']); const opcion = getVal(row, ['opcion','opcion_label','opcion_valor','label','value','nombre_opcion']); const precio = toNum(getVal(row, ['precio','price','costo','opcion_precio','extra'])); if (!modelo || !pasoId || !opcion) continue; priceLookup.set(priceKey(modelo, pasoId, opcion), precio); }\nconst selections = Array.isArray(userState.selections) ? userState.selections.map((sel) => { const paso = sel.step ?? sel.label ?? ''; const opcion = sel.value ?? sel.option ?? ''; const sheetPrice = priceLookup.get(priceKey(machine, paso, opcion)); const precio = Number.isFinite(sheetPrice) ? sheetPrice : Number(sel.price ?? 0); return { paso, opcion, precio }; }) : [];\nconst selectionsTotal = selections.reduce((sum, sel) => sum + toNum(sel.precio), 0);\nconst resolvedTotalPrice = resolvedBasePrice + selectionsTotal;\nconst fastapiBody = { modelo: machine ?? '', nombre_cliente: customer.name ?? '', email: customer.email ?? '', asesor: userState.advisor ?? '', precio_base: resolvedBasePrice, precio_cambiado: resolvedTotalPrice, selecciones: selections };\nreturn [{ json: { ...input, fastapiBody } }];"
+      },
+      "id": "f0e4f8aa-cfdc-4db5-a39a-e9ee0c66c9b9",
+      "name": "Preparar Body FastAPI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2256,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://kenisha-wrongful-jetta.ngrok-free.dev/generar-cotizacion\n",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.fastapiBody }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "8bf00c3c-26f3-4049-b3e1-8948ef4639f8",
+      "name": "Llamar FastAPI Cotización",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2496,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const chatId = $json.chatId;\nconst email = $json.quotePayload?.customer?.email || $json.fastapiBody?.email || $json.userState?.customer?.email || '';\nconst nombre = $json.quotePayload?.customer?.name || $json.fastapiBody?.nombre_cliente || $json.userState?.customer?.name || '';\nconst modelo = $json.quotePayload?.machine || $json.fastapiBody?.modelo || $json.userState?.machine || 'N/A';\nconst total = $json.quotePayload?.totalPrice ?? $json.fastapiBody?.precio_cambiado ?? $json.userState?.totalPrice ?? '';\nconst hasEmail = typeof email === 'string' && email.includes('@');\nreturn [{ json: { ...$json, chatId, email, nombre, modelo, total, hasEmail }, binary: $binary }];"
+      },
+      "id": "d3822385-1749-4874-bb05-56dace635b32",
+      "name": "Preparar Email (json3)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2960,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.hasEmail }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "162c88fd-ddba-479c-b5bf-85aec5082b30",
+      "name": "¿Email válido? (json3)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        3200,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { chat_id: $json.chatId, text: `⚠️ PDF generado, pero falta el correo del cliente. Escribe un correo válido para poder enviarlo.` } }}",
+        "options": {}
+      },
+      "id": "db4c5205-97ed-487c-ab3a-aad945909f51",
+      "name": "Notificar error correo (json3)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3568,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ !!$binary.data }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "f9df0102-4b0e-4c69-bb3f-de5f9a7f0b34",
+      "name": "¿PDF generado? (json3)1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2720,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "={{ $json.chatId }}",
+        "binaryData": true,
+        "additionalFields": {
+          "caption": "={{ `📄 Cotización generada\nModelo: ${$json.modelo}\nCliente: ${$json.nombre || 'N/A'}\nTotal: $${$json.total || 'N/A'} USD` }}"
+        }
+      },
+      "id": "649e6b13-cb45-4f2a-b5ad-8a47efa9170a",
+      "name": "Enviar PDF Telegram (json3)1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3200,
+        320
+      ],
+      "webhookId": "8cfe05cd-0f2b-40c8-9068-45bf1dcb411e",
+      "credentials": {
+        "telegramApi": {
+          "id": "eL0hlLYzdSvIyb3H",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "subject": "Cotización/ficha técnica VC999",
+        "message": "={{ `Buen día ${$json.nombre || ''},\n\nLe hago llegar la Cotización/ficha técnica de lo solicitado.\n\nQuedo atento a cualquier duda o comentario por whatsapp o correo.` }}",
+        "toList": [
+          "={{ $json.email }}\n"
+        ],
+        "additionalFields": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "data"
+              }
+            ]
+          },
+          "ccList": [
+            "Manuel.rayotorres@vc999.com"
+          ]
+        }
+      },
+      "id": "ba15c476-68a5-4983-8e2e-d20833c74cd5",
+      "name": "Enviar Correo Gmail (json3)1",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [
+        3568,
+        432
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "I7XhuOfAwPRFFNHQ",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { chat_id: $json.chatId, text: `⚠️ Error al generar tu cotización. Detalles: PDF no disponible.` } }}",
+        "options": {}
+      },
+      "id": "b1ff3730-ca92-4a97-a794-bfdb28555025",
+      "name": "Notificar error PDF (json3)1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3184,
+        880
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": { "main": [[{ "node": "Normalize Telegram", "type": "main", "index": 0 }]] },
+    "Normalize Telegram": { "main": [[{ "node": "Verificar Memoria", "type": "main", "index": 0 }]] },
+    "Verificar Memoria": { "main": [[{ "node": "¿Cargar BD?", "type": "main", "index": 0 }]] },
+    "¿Cargar BD?": { "main": [[{ "node": "Leer DB_Maquinas", "type": "main", "index": 0 }],[{ "node": "Router Maestro", "type": "main", "index": 0 }]] },
+    "Leer DB_Maquinas": { "main": [[{ "node": "Leer DB_Opciones", "type": "main", "index": 0 }]] },
+    "Leer DB_Opciones": { "main": [[{ "node": "Leer DB_Precios", "type": "main", "index": 0 }]] },
+    "Leer DB_Precios": { "main": [[{ "node": "Guardar en Memoria", "type": "main", "index": 0 }]] },
+    "Guardar en Memoria": { "main": [[{ "node": "Router Maestro", "type": "main", "index": 0 }]] },
+    "Router Maestro": { "main": [[{ "node": "Switch Maestro", "type": "main", "index": 0 }]] },
+    "¿Terminó?": { "main": [[{ "node": "Leer DB_Maquinas Precio Base", "type": "main", "index": 0 }],[{ "node": "HTTP Request", "type": "main", "index": 0 }]] },
+    "Switch Maestro": { "main": [[{ "node": "Enviar Menú", "type": "main", "index": 0 }],[{ "node": "Generar menú dinámico", "type": "main", "index": 0 }],[{ "node": "Lógica Cotizador", "type": "main", "index": 0 }]] },
+    "Generar menú dinámico": { "main": [[{ "node": "HTTP Request", "type": "main", "index": 0 }]] },
+    "Lógica Cotizador": { "main": [[{ "node": "¿Terminó?", "type": "main", "index": 0 }]] },
+    "Preparar Body FastAPI": { "main": [[{ "node": "Llamar FastAPI Cotización", "type": "main", "index": 0 }]] },
+    "Llamar FastAPI Cotización": { "main": [[{ "node": "¿PDF generado? (json3)1", "type": "main", "index": 0 }]] },
+    "Preparar Email (json3)": { "main": [[{ "node": "Enviar PDF Telegram (json3)1", "type": "main", "index": 0 },{ "node": "¿Email válido? (json3)", "type": "main", "index": 0 }]] },
+    "¿Email válido? (json3)": { "main": [[{ "node": "Enviar Correo Gmail (json3)1", "type": "main", "index": 0 }],[{ "node": "Notificar error correo (json3)", "type": "main", "index": 0 }]] },
+    "¿PDF generado? (json3)1": { "main": [[{ "node": "Preparar Email (json3)", "type": "main", "index": 0 }],[{ "node": "Notificar error PDF (json3)1", "type": "main", "index": 0 }]] },
+    "Leer DB_Maquinas Precio Base": { "main": [[{ "node": "Leer DB_Precios FastAPI", "type": "main", "index": 0 }]] },
+    "Leer DB_Precios FastAPI": { "main": [[{ "node": "Preparar Body FastAPI", "type": "main", "index": 0 }]] }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "d1b58ffd-1d79-4ae8-a8fe-61597a792671",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e40ab5b7877ecb5760f6faed60f3ac18b0bd41d70eb0dbf28ed38617d2f1fde5"
+  },
+  "id": "NlxTENBFuxQitM4n",
+  "tags": []
+}
