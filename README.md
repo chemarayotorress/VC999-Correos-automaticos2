@@ -164,3 +164,12 @@ En el workflow versionado (`json3.json`) se agregó un nodo HTTP antes de mostra
 4. Rama `false` -> enviar mensaje de error al usuario y no continuar el flujo.
 
 Con esto, cada vez que Telegram mande `/start`, n8n fuerza refresh del catálogo en backend antes de continuar con cotización.
+
+### Refresh de precios en Telegram (json3.json)
+
+Para cambiar precios y etiquetas visibles del cotizador de Telegram, edita Google Sheets en:
+- `DB_Maquinas` (precio base)
+- `DB_Opciones` (pasos/opciones)
+- `DB_Precios` (precios extra y labels)
+
+Luego envía `/start` al bot para forzar recarga de catálogo/precios en memoria del workflow.
