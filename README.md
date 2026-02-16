@@ -56,28 +56,52 @@ Recuerda que la exportación a PDF mediante `docx2pdf` requiere Microsoft Word e
 
 Si necesitas compartir la aplicación mediante una memoria USB u otro medio externo, revisa la guía [`docs/USB_DEPLOYMENT.md`](docs/USB_DEPLOYMENT.md). Encontrarás un checklist de archivos a copiar y scripts para automatizar la instalación de dependencias en equipos Windows, macOS o Linux.
 
-## API FastAPI: prueba rápida del hotfix de modelos
+## API FastAPI: prueba manual para n8n (`/generar-cotizacion`)
 
-Con el servicio levantado (`uvicorn fastapi_app:app --reload`), puedes validar la normalización de modelo/plantilla y el manejo de errores con estos `curl`:
+Inicia el servicio con:
 
 ```bash
-# Acepta machine sin extensión
-curl -X POST http://127.0.0.1:8000/generar-cotizacion \
-  -H "Content-Type: application/json" \
-  -d '{"machine":"CM640","customer":"Cliente Demo"}'
-
-# Acepta machine con extensión .docx (case-insensitive)
-curl -X POST http://127.0.0.1:8000/generar-cotizacion \
-  -H "Content-Type: application/json" \
-  -d '{"machine":"cm640.docx","customer":"Cliente Demo"}'
-
-# También acepta el campo legacy modelo
-curl -X POST http://127.0.0.1:8000/generar-cotizacion \
-  -H "Content-Type: application/json" \
-  -d '{"modelo":"CM640.docx","nombre_cliente":"Cliente Demo"}'
-
-# Modelo inexistente -> 400 con listado corto de disponibles
-curl -i -X POST http://127.0.0.1:8000/generar-cotizacion \
-  -H "Content-Type: application/json" \
-  -d '{"machine":"CM9999","customer":"Cliente Demo"}'
+python -m uvicorn fastapi_app:app --host 0.0.0.0 --port 8000 --reload
 ```
+
+Prueba el payload nuevo (n8n) con `selections` como lista y `customer` como objeto:
+
+```bash
+curl -X POST http://127.0.0.1:8000/generar-cotizacion \
+  -H "Content-Type: application/json" \
+  -o cotizacion.pdf \
+  -d '{
+    "machine": "CM640.docx",
+    "basePrice": 17995,
+    "totalPrice": 17995,
+    "selections": [
+      {"step":"Voltage","value":"208V_3PH_60HZ","price":0},
+      {"step":"GasFlush","value":"NO","price":0},
+      {"step":"PositiveAirSealer","value":"NO","price":0}
+    ],
+    "customer": {"name":"Chema","email":"chema@example.com"}
+  }'
+```
+
+Ejemplo equivalente en PowerShell:
+
+```powershell
+$body = @{
+  machine = "CM640.docx"
+  basePrice = 17995
+  totalPrice = 17995
+  selections = @(
+    @{ step = "Voltage"; value = "208V_3PH_60HZ"; price = 0 },
+    @{ step = "GasFlush"; value = "NO"; price = 0 },
+    @{ step = "PositiveAirSealer"; value = "NO"; price = 0 }
+  )
+  customer = @{ name = "Chema"; email = "chema@example.com" }
+} | ConvertTo-Json -Depth 5
+
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/generar-cotizacion" -ContentType "application/json" -Body $body -OutFile "cotizacion.pdf"
+```
+
+Validaciones esperadas:
+- HTTP 200 y generación de PDF (sin error 422).
+- El mismo resultado al enviar `machine: "CM640"` o `machine: "CM640.docx"`.
+- El payload legado (campos `modelo`, `nombre_cliente`, etc.) sigue siendo aceptado.

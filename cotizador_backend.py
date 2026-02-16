@@ -306,6 +306,8 @@ def generar_cotizacion_backend(
     opciones_overrides: Optional[dict] = None,
     ruta_salida_word: Optional[str] = None,
     ruta_salida_pdf: Optional[str] = None,
+    precio_base_override: Optional[float] = None,
+    precio_total_override: Optional[float] = None,
 ) -> dict:
     """Genera la cotización (DOCX y opcional PDF) usando la lógica de Packaging+.
 
@@ -325,10 +327,11 @@ def generar_cotizacion_backend(
     catalog = _normalize_machine_catalog(load_catalog())
     conf = catalog.get(template_name, {"base": Decimal("0"), "options": {}})
 
-    base = conf.get("base", Decimal("0"))
+    base_catalogo = conf.get("base", Decimal("0"))
+    base = _parse_decimal_safe(precio_base_override) if precio_base_override is not None else base_catalogo
     overrides = opciones_overrides or {}
     selected, opt_total = _build_option_summary(conf.get("options", {}), overrides)
-    total = base + opt_total
+    total = _parse_decimal_safe(precio_total_override) if precio_total_override is not None else (base + opt_total)
 
     # Datos generales
     today_str = datetime.now().strftime("%d/%m/%Y")
@@ -531,6 +534,11 @@ def generar_cotizacion_desde_json(datos: dict) -> str:
     flete_texto = datos.get("flete_texto")
     flete_monto = datos.get("flete_monto")
 
+    precio_base = datos.get("basePrice")
+    if precio_base is None:
+        precio_base = datos.get("precio_cambiado")
+    precio_total = datos.get("totalPrice")
+
     overrides: Dict[str, Any] = {}
 
     def _set_override(key: str, value: Any) -> None:
@@ -559,6 +567,11 @@ def generar_cotizacion_desde_json(datos: dict) -> str:
         _set_override(f"contrato{idx}_porcentaje", datos.get(f"contrato{idx}_porcentaje"))
         _set_override(f"contrato{idx}_condicion", datos.get(f"contrato{idx}_condicion"))
 
+    selections = datos.get("selections")
+    if isinstance(selections, dict):
+        for step, selection_value in selections.items():
+            _set_override(str(step), selection_value)
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     base_name = f"Cotizacion_{_sanitize_filename(modelo)}_{_sanitize_filename(cliente)}_{timestamp}"
     salida_dir = os.path.join(_app_dir(), "salidas")
@@ -578,6 +591,8 @@ def generar_cotizacion_desde_json(datos: dict) -> str:
         opciones_overrides=overrides,
         ruta_salida_word=ruta_word,
         ruta_salida_pdf=ruta_pdf,
+        precio_base_override=precio_base,
+        precio_total_override=precio_total,
     )
 
     pdf_path = resultado.get("ruta_pdf") or ruta_pdf
