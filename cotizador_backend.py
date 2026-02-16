@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 import shutil
 import unicodedata
+import logging
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
@@ -27,6 +28,7 @@ from template_mapping import TemplateMappingManager
 from template_resolver import normalize_model, resolve_template_path
 
 APP_TITLE = "VC999 Packaging+ Cotizador"
+logger = logging.getLogger(__name__)
 DEFAULT_CONCEPTS = [("Con orden de compra", "35"), ("Contra aviso de entrega", "55"), ("Al instalar", "10")]
 
 OPTION_TRANSLATIONS = {
@@ -187,34 +189,82 @@ def _to_bool_or_none(value: Any) -> Optional[bool]:
     return bool(text)
 
 
-def _replace_in_paragraph(paragraph, key: str, value: str):
+def _to_si_no(value: Any) -> str:
+    parsed = _to_bool_or_none(value)
+    if parsed is None:
+        return ""
+    return "Sí" if parsed else "No"
+
+
+def _normalize_spec_value(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        text = value.strip()
+    else:
+        text = str(value).strip()
+    if not text:
+        return ""
+    parsed = _to_bool_or_none(text)
+    if parsed is not None and text.lower() in {"1", "0", "true", "false", "si", "sí", "yes", "no", "off", "on"}:
+        return "Sí" if parsed else "No"
+    if text.lower() in {"sí", "si", "yes"}:
+        return "Sí"
+    if text.lower() in {"no"}:
+        return "No"
+    return _to_spanish_ui(text)
+
+
+def _replace_in_paragraph(paragraph, key: str, value: str) -> bool:
     if key not in paragraph.text:
-        return
+        return False
     runs = paragraph.runs
-    full = "".join(r.text for r in runs)
-    new = full.replace(key, value)
     if not runs:
-        paragraph.add_run(new)
-        return
+        return False
+    full = "".join(r.text for r in runs)
+    if key not in full:
+        return False
+    new = full.replace(key, value)
+    if new == full:
+        return False
     runs[0].text = new
     for r in runs[1:]:
         r.text = ""
+    return True
 
 
-def _replace_in_table(table, key: str, value: str):
+def _replace_in_table(table, key: str, value: str) -> int:
+    replacements = 0
     for row in table.rows:
         for cell in row.cells:
             for p in cell.paragraphs:
-                _replace_in_paragraph(p, key, value)
+                if _replace_in_paragraph(p, key, value):
+                    replacements += 1
+            for nested_table in cell.tables:
+                replacements += _replace_in_table(nested_table, key, value)
+    return replacements
 
 
-def docx_replace_placeholders(doc: "Document", mapping: dict):
-    for p in doc.paragraphs:
-        for k, v in mapping.items():
-            _replace_in_paragraph(p, k, v)
-    for table in doc.tables:
-        for k, v in mapping.items():
-            _replace_in_table(table, k, v)
+def _replace_in_doc_part(part, key: str, value: str) -> int:
+    replacements = 0
+    for p in part.paragraphs:
+        if _replace_in_paragraph(p, key, value):
+            replacements += 1
+    for table in part.tables:
+        replacements += _replace_in_table(table, key, value)
+    return replacements
+
+
+def docx_replace_placeholders(doc: "Document", mapping: dict) -> Dict[str, int]:
+    replaced_counts: Dict[str, int] = {}
+    for k, v in mapping.items():
+        count = _replace_in_doc_part(doc, k, v)
+        for section in doc.sections:
+            count += _replace_in_doc_part(section.header, k, v)
+            count += _replace_in_doc_part(section.footer, k, v)
+        if count:
+            replaced_counts[k] = count
+    return replaced_counts
 
 
 def _convert_docx_to_pdf(input_path: str, output_path: str) -> str:
@@ -410,14 +460,36 @@ def generar_cotizacion_backend(
     _put(data, ["operation", "operacion"], vop)
     _put(data, ["corte_mecanico"], corte_val)
 
-    for k in list(selected.keys()):
-        if "gas flush" in k or "inyeccion de gas" in k or "inyección de gas" in k:
-            _put(data, ["gas_flush", "gas flush", "descarga_gas", "inyeccion_gas", "inyección_gas"], selected[k])
-            break
-    for k in list(selected.keys()):
-        if "positive air sealer" in k:
-            _put(data, ["positive_air", "positive air", "positive_air_sealer"], selected[k])
-            break
+    def _find_selected_value(*tokens: str) -> str:
+        token_set = tuple(t.lower() for t in tokens)
+        for key, value in selected.items():
+            key_lower = key.lower()
+            if any(token in key_lower for token in token_set):
+                return value
+        return ""
+
+    def _find_override_value(*keys: str) -> Any:
+        for lookup in keys:
+            normalized_lookup = _normalize_key(lookup)
+            for key, value in overrides.items():
+                if _normalize_key(str(key)) == normalized_lookup:
+                    return value
+        return None
+
+    gas_value = _normalize_spec_value(
+        _find_selected_value("gas flush", "inyeccion de gas", "inyección de gas")
+        or _to_si_no(_find_override_value("descarga_gas", "inyeccion_gas", "gas_flush", "GasFlush"))
+    )
+    if gas_value:
+        _put(data, ["gas_flush", "gas flush", "descarga_gas", "inyeccion_gas", "inyección_gas"], gas_value)
+
+    positive_air_value = _normalize_spec_value(
+        _find_selected_value("positive air sealer", "aire positivo", "positiveairsealer")
+        or _to_si_no(_find_override_value("positivo_air", "aire_positivo", "positive_air", "PositiveAirSealer"))
+    )
+    if positive_air_value:
+        _put(data, ["positive_air", "positive air", "positive_air_sealer", "positivo_air", "aire_positivo"], positive_air_value)
+
     for k in list(selected.keys()):
         if "bi-active sealing system" in k or "bi active sealing system" in k:
             _put(data, ["sellado_biactivo", "bi-active sealing system", "bi_active_sealing_system"], selected[k])
@@ -459,7 +531,19 @@ def generar_cotizacion_backend(
     tpl_path = str(template_path)
 
     doc = Document(tpl_path)
-    docx_replace_placeholders(doc, data)
+    replaced_counts = docx_replace_placeholders(doc, data)
+
+    tracked_placeholders = ("{{descarga_gas}}", "{{positivo_air}}")
+    for placeholder in tracked_placeholders:
+        if placeholder in replaced_counts:
+            logger.info(
+                "Placeholder %s reemplazado %s vez(veces) con valor=%r",
+                placeholder,
+                replaced_counts[placeholder],
+                data.get(placeholder, ""),
+            )
+        else:
+            logger.warning("Placeholder esperado no encontrado en plantilla: %s", placeholder)
 
     os.makedirs(os.path.dirname(ruta_salida_word or os.path.join(_app_dir(), "salidas")), exist_ok=True)
     default_name = f"Cotizacion_{_sanitize_filename(modelo)}_{_sanitize_filename(cliente)}_{datetime.now().strftime('%Y%m%d_%H%M')}.docx"
@@ -556,8 +640,10 @@ def generar_cotizacion_desde_json(datos: dict) -> str:
 
     for key, raw in (
         ("descarga_gas", datos.get("inyeccion_gas")),
+        ("inyeccion_gas", datos.get("inyeccion_gas")),
         ("sistema_biactivo", datos.get("sistema_biactivo")),
         ("aire_positivo", datos.get("aire_positivo")),
+        ("positivo_air", datos.get("aire_positivo")),
     ):
         bval = _to_bool_or_none(raw)
         if bval is not None:
@@ -600,4 +686,3 @@ def generar_cotizacion_desde_json(datos: dict) -> str:
         raise FileNotFoundError(f"No se pudo generar el PDF en {pdf_path}")
 
     return pdf_path
-
