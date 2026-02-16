@@ -3,11 +3,11 @@ from __future__ import annotations
 import io
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from cotizador_backend import generar_cotizacion_desde_json
 from template_resolver import list_available_models, normalize_model, resolve_template_path
@@ -21,11 +21,20 @@ class CotizacionRequest(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # Nuevo payload (n8n)
+    class SelectionItem(BaseModel):
+        step: str
+        value: str
+        price: float = 0
+
+    class Customer(BaseModel):
+        name: str
+        email: str
+
     machine: Optional[str] = None
-    basePrice: Optional[float] = None
-    totalPrice: Optional[float] = None
-    selections: Optional[Dict[str, Any]] = None
-    customer: Optional[str] = None
+    basePrice: Optional[float] = Field(default=None, description="Precio base recibido desde n8n")
+    totalPrice: Optional[float] = Field(default=None, description="Precio total final recibido desde n8n")
+    selections: Optional[Union[List[SelectionItem], Dict[str, Any]]] = None
+    customer: Optional[Union[Customer, str]] = None
 
     # Compatibilidad con payload anterior
     modelo: Optional[str] = None
@@ -86,10 +95,31 @@ def generar_cotizacion(req: CotizacionRequest):
 
     # Prioridad al payload nuevo de n8n sin romper compatibilidad.
     datos["modelo"] = model_normalized
-    if datos.get("customer") and not datos.get("nombre_cliente"):
-        datos["nombre_cliente"] = str(datos["customer"]).strip()
+    customer = datos.get("customer")
+    if isinstance(customer, dict):
+        if customer.get("name") and not datos.get("nombre_cliente"):
+            datos["nombre_cliente"] = str(customer.get("name")).strip()
+        if customer.get("email") and not datos.get("email"):
+            datos["email"] = str(customer.get("email")).strip()
+    elif customer and not datos.get("nombre_cliente"):
+        datos["nombre_cliente"] = str(customer).strip()
+
+    if datos.get("basePrice") is not None and datos.get("precio_cambiado") is None:
+        datos["precio_cambiado"] = datos["basePrice"]
 
     selections = datos.get("selections")
+    if isinstance(selections, list):
+        normalized_selections: Dict[str, Any] = {}
+        for item in selections:
+            if not isinstance(item, dict):
+                continue
+            step = str(item.get("step") or "").strip()
+            if not step:
+                continue
+            normalized_selections[step] = item.get("value")
+        datos["selections"] = normalized_selections
+        selections = normalized_selections
+
     if isinstance(selections, dict):
         for key, value in selections.items():
             datos.setdefault(key, value)

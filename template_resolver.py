@@ -20,6 +20,7 @@ def normalize_model(value: Optional[str]) -> str:
         return ""
     normalized = str(value).strip()
     normalized = DOCX_EXTENSION_RE.sub("", normalized)
+    normalized = re.sub(r"\s+", "", normalized)
     return normalized.upper()
 
 
