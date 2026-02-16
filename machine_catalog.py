@@ -4,6 +4,8 @@ from __future__ import annotations
 import copy
 import json
 import os
+import re
+import threading
 import uuid
 from dataclasses import dataclass
 from decimal import Decimal
@@ -43,6 +45,24 @@ class MachineConfig:
 
 
 DEFAULT_MACHINE_CATALOG: Dict[str, Dict] = {}
+_RUNTIME_CATALOG: Optional[Dict[str, Dict]] = None
+_CATALOG_LOCK = threading.RLock()
+
+
+def _read_catalog_file(path: str) -> Optional[Dict[str, Dict]]:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            raw = f.read()
+    except Exception:
+        return None
+    for candidate in (raw, re.sub(r"(?<=\d),(?=\d)", "", raw)):
+        try:
+            data = json.loads(candidate)
+            if isinstance(data, dict):
+                return data
+        except Exception:
+            continue
+    return None
 
 
 def _default_catalog() -> Dict[str, Dict]:
@@ -51,29 +71,37 @@ def _default_catalog() -> Dict[str, Dict]:
         return copy.deepcopy(DEFAULT_MACHINE_CATALOG)
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), CATALOG_FILE)
     if os.path.exists(path):
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                if isinstance(data, dict):
-                    DEFAULT_MACHINE_CATALOG = data
-                    return copy.deepcopy(DEFAULT_MACHINE_CATALOG)
-        except Exception:
-            pass
+        data = _read_catalog_file(path)
+        if isinstance(data, dict):
+            DEFAULT_MACHINE_CATALOG = data
+            return copy.deepcopy(DEFAULT_MACHINE_CATALOG)
     return {}
 
 
-def load_catalog() -> Dict[str, Dict]:
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), CATALOG_FILE)
-    if not os.path.exists(path):
-        return _default_catalog()
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+def load_catalog(force_disk: bool = False) -> Dict[str, Dict]:
+    global _RUNTIME_CATALOG
+    with _CATALOG_LOCK:
+        if _RUNTIME_CATALOG is not None and not force_disk:
+            return copy.deepcopy(_RUNTIME_CATALOG)
+
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), CATALOG_FILE)
+        if os.path.exists(path):
+            data = _read_catalog_file(path)
             if isinstance(data, dict):
-                return data
-    except Exception:
-        pass
-    return _default_catalog()
+                _RUNTIME_CATALOG = copy.deepcopy(data)
+                return copy.deepcopy(_RUNTIME_CATALOG)
+
+        fallback = _default_catalog()
+        _RUNTIME_CATALOG = copy.deepcopy(fallback)
+        return copy.deepcopy(_RUNTIME_CATALOG)
+
+
+def set_runtime_catalog(catalog: Dict[str, Dict], persist: bool = False):
+    global _RUNTIME_CATALOG
+    with _CATALOG_LOCK:
+        _RUNTIME_CATALOG = copy.deepcopy(catalog or {})
+        if persist:
+            save_catalog(_RUNTIME_CATALOG)
 
 
 def save_catalog(catalog: Dict[str, Dict]):
@@ -91,6 +119,10 @@ def save_catalog(catalog: Dict[str, Dict]):
         pass
     with open(path, "w", encoding="utf-8") as f:
         json.dump(catalog, f, ensure_ascii=False, indent=2)
+
+    with _CATALOG_LOCK:
+        global _RUNTIME_CATALOG
+        _RUNTIME_CATALOG = copy.deepcopy(catalog or {})
 
 
 # --- Tk editor -----------------------------------------------------------

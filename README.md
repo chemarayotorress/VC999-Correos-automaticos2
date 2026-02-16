@@ -105,3 +105,62 @@ Validaciones esperadas:
 - HTTP 200 y generación de PDF (sin error 422).
 - El mismo resultado al enviar `machine: "CM640"` o `machine: "CM640.docx"`.
 - El payload legado (campos `modelo`, `nombre_cliente`, etc.) sigue siendo aceptado.
+
+
+## Sincronización de catálogo desde Google Sheets (`/sync-catalog`)
+
+El backend ahora puede usar Google Sheets como **source of truth** para precios base y opciones, con fallback automático a `machines.json` si falla Sheets.
+
+### Variables de entorno
+
+- `CATALOG_SYNC_TOKEN`: token requerido por el endpoint `POST /sync-catalog` (header `X-VC999-TOKEN`).
+- `CATALOG_SYNC_TTL_SECONDS` (opcional, default `300`): TTL de caché para evitar recargas repetidas.
+- `CATALOG_SYNC_TIMEOUT_SECONDS` (opcional, default `15`): timeout de lectura a Sheets.
+
+#### Modo A: CSV export (sin credenciales)
+
+- `GOOGLE_SHEET_ID=<id_del_sheet>`
+- Compartir/publicar el documento para que las pestañas sean accesibles.
+- Se leen estas URLs:
+  - `https://docs.google.com/spreadsheets/d/<ID>/gviz/tq?tqx=out:csv&sheet=DB_Maquinas`
+  - `https://docs.google.com/spreadsheets/d/<ID>/gviz/tq?tqx=out:csv&sheet=DB_Precios`
+
+#### Modo B: Service Account (sheet privado, recomendado)
+
+- `GOOGLE_SHEET_ID=<id_del_sheet>`
+- `GOOGLE_APPLICATION_CREDENTIALS=<ruta_al_json_de_service_account>`
+- Compartir el Sheet con el correo de la service account (permiso lector).
+
+### Forzar refresh inmediato
+
+```bash
+curl -X POST http://127.0.0.1:8000/sync-catalog   -H "X-VC999-TOKEN: $CATALOG_SYNC_TOKEN"
+```
+
+Respuesta esperada cuando todo está correcto:
+
+```json
+{
+  "ok": true,
+  "source": "sheets",
+  "updated_at": "2026-01-01T12:00:00+00:00",
+  "items": 8
+}
+```
+
+Si falla Google Sheets, el backend hace fallback a `machines.json` y deja log: `Fallback to local machines.json`.
+
+### Integración n8n para ejecutar sync en cada `/start`
+
+En el workflow versionado (`json3.json`) se agregó un nodo HTTP antes de mostrar el menú inicial:
+
+1. Nodo: **Sync Catalog Backend** (HTTP Request)
+   - Method: `POST`
+   - URL: `https://<tu-ngrok>/sync-catalog`
+   - Header: `X-VC999-TOKEN: {{$env.CATALOG_SYNC_TOKEN}}`
+2. Nodo IF: **¿Sync catálogo OK?**
+   - Condición: `{{$json.ok}}` es `true`
+3. Rama `true` -> continuar con **Enviar Menú**.
+4. Rama `false` -> enviar mensaje de error al usuario y no continuar el flujo.
+
+Con esto, cada vez que Telegram mande `/start`, n8n fuerza refresh del catálogo en backend antes de continuar con cotización.

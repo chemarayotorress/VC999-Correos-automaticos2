@@ -672,6 +672,52 @@
         3184,
         880
       ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://kenisha-wrongful-jetta.ngrok-free.dev/sync-catalog",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-VC999-TOKEN",
+              "value": "={{ $env.CATALOG_SYNC_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "bd09996a-5d6a-4b86-be4e-7a4f9d2344cf",
+      "name": "Sync Catalog Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        720,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.ok }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "ddcc599a-aec5-49cd-8bbe-61a6c65e370d",
+      "name": "¿Sync catálogo OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        960,
+        112
+      ]
     }
   ],
   "pinData": {},
@@ -804,7 +850,7 @@
       "main": [
         [
           {
-            "node": "Enviar Menú",
+            "node": "Sync Catalog Backend",
             "type": "main",
             "index": 0
           }
@@ -948,6 +994,29 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "Sync Catalog Backend": {
+      "main": [
+        [
+          {
+            "node": "¿Sync catálogo OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Sync catálogo OK?": {
+      "main": [
+        [
+          {
+            "node": "Enviar Menú",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     }
   },
