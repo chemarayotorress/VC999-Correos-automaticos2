@@ -40,7 +40,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $getWorkflowStaticData('global');\nconst catalog = data.catalog;\nconst incomingText = String($json?.text || '').trim();\nconst isReloadCommand = /^\\/reload(?:\\s|$)/i.test(incomingText);\nconst isStartCommand = /^\\/start(?:\\s|$)/i.test(incomingText);\nconst shouldForceReload = isReloadCommand || isStartCommand;\nlet memoryEmpty = true;\n\nif (!shouldForceReload && catalog && Object.keys(catalog).length > 0) {\n  let hasOptions = false;\n\n  for (const model of Object.values(catalog)) {\n    if (!model || !Array.isArray(model.steps)) continue;\n    for (const step of model.steps) {\n      if (!step || !Array.isArray(step.options)) continue;\n      if (step.options.length > 0) {\n        hasOptions = true;\n        break;\n      }\n    }\n    if (hasOptions) break;\n  }\n\n  memoryEmpty = !hasOptions;\n}\n\nif (shouldForceReload) memoryEmpty = true;\n\nconst firstItem = $input.first()?.json ?? {};\nreturn [{ json: { ...firstItem, memoryEmpty, shouldReload: shouldForceReload, isReloadCommand, isStartCommand } }];"
+        "jsCode": "const data = $getWorkflowStaticData('global');\nconst catalog = data.catalog;\nconst incomingText = String($json?.text || '').trim();\nconst isReloadCommand = /^\\/reload(?:\\s|$)/i.test(incomingText);\nconst isStartCommand = /^\\/start(?:\\s|$)/i.test(incomingText);\nconst hasPriceIndex = !!(data.priceIndex && Object.keys(data.priceIndex).length > 0);\nlet memoryEmpty = true;\n\nif (catalog && Object.keys(catalog).length > 0) {\n  let hasOptions = false;\n\n  for (const model of Object.values(catalog)) {\n    if (!model || !Array.isArray(model.steps)) continue;\n    for (const step of model.steps) {\n      if (!step || !Array.isArray(step.options)) continue;\n      if (step.options.length > 0) {\n        hasOptions = true;\n        break;\n      }\n    }\n    if (hasOptions) break;\n  }\n\n  memoryEmpty = !hasOptions;\n}\n\nif (isReloadCommand) memoryEmpty = true;\nconst shouldRefreshPrices = isStartCommand || isReloadCommand || !hasPriceIndex;\n\nconst items = $input.all();\nreturn items.map(item => ({\n  json: {\n    ...item.json,\n    memoryEmpty,\n    shouldReload: isReloadCommand,\n    isReloadCommand,\n    isStartCommand,\n    shouldRefreshPrices,\n  },\n}));"
       },
       "id": "0a0a5963-3a08-44e2-a76f-c651cd19c2c0",
       "name": "Verificar Memoria",
@@ -87,8 +87,7 @@
           "cachedResultName": "DB_Maquinas",
           "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY/edit#gid=1338588165"
         },
-        "options": {},
-        "returnAll": true
+        "options": {}
       },
       "id": "5a834498-d3c9-47f6-a7be-a1072a6063c0",
       "name": "Leer DB_Maquinas",
@@ -103,8 +102,7 @@
           "id": "y849MEubVdTfoMXc",
           "name": "Google Sheets account"
         }
-      },
-      "executeOnce": true
+      }
     },
     {
       "parameters": {
@@ -122,8 +120,7 @@
           "cachedResultName": "DB_Opciones",
           "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY/edit#gid=1030515664"
         },
-        "options": {},
-        "returnAll": true
+        "options": {}
       },
       "id": "7485a071-5915-439d-b3d9-50ed42516247",
       "name": "Leer DB_Opciones",
@@ -155,7 +152,8 @@
           "value": "DB_Precios",
           "mode": "name"
         },
-        "returnAll": true,
+        "returnAll": false,
+        "limit": 1000,
         "options": {
           "valueRenderMode": "UNFORMATTED_VALUE"
         }
@@ -192,7 +190,7 @@
     {
       "parameters": {
         "chatId": "={{ $json.chatId }}",
-        "text": "👋 *Bienvenido al Cotizador VC999*\n\nSelecciona el modo:",
+        "text": "={{ ($json.isReloadCommand || $json.shouldReload) ? '✅ Catálogo actualizado\\n\\n👋 *Bienvenido al Cotizador VC999*\\n\\nSelecciona el modo:' : '👋 *Bienvenido al Cotizador VC999*\\n\\nSelecciona el modo:' }}",
         "replyMarkup": "inlineKeyboard",
         "inlineKeyboard": {
           "rows": [
@@ -238,7 +236,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const { chatId, text, raw, shouldReload: inReload, isCallback, callbackQueryId, callbackMessageId } = $json;\nconst staticData = $getWorkflowStaticData('global');\nstaticData.cot = staticData.cot || {};\nconst hasSession = !!staticData.cot?.[chatId];\nlet action = null;\nconst incomingText = String(text || '').trim();\nconst isReloadCommand = /^\\/reload(?:\\s|$)/i.test(incomingText);\nconst isStartCommand = /^\\/start(?:\\s|$)/i.test(incomingText);\nconst shouldReload = !!inReload || isReloadCommand || isStartCommand;\n\nconst setMode = (mode) => {\n  if (!mode) return;\n  const current = staticData.cot[chatId] || {};\n  staticData.cot[chatId] = { ...current, mode: mode.toUpperCase() };\n};\n\nif (isReloadCommand) {\n  action = 'RELOAD_DONE';\n} else if (isStartCommand) {\n  action = 'START';\n  staticData.cot[chatId] = {};\n} else if (raw?.message?.text && raw.message.text.startsWith('/')) {\n  action = 'START';\n  staticData.cot[chatId] = {};\n} else if (raw?.callback_query?.data) {\n  const data = raw.callback_query.data;\n  if (data === 'MENU|AVANZADA' || data === 'MODE|ADV') {\n    setMode('ADV');\n    action = 'MENU_SELECTION';\n  } else if (data === 'MODE|FAST') {\n    setMode('FAST');\n    action = 'MENU_SELECTION';\n  } else {\n    action = 'COTIZACION_FLOW';\n  }\n} else if (raw?.message?.text && !raw.message.text.startsWith('/') && hasSession) {\n  action = 'COTIZACION_FLOW';\n}\n\nconst outText = action === 'RELOAD_DONE' ? '✅ Catálogo actualizado' : text;\nreturn [{ json: { chatId, text: outText, action, shouldReload, isReloadCommand, isStartCommand, raw, isCallback, callbackQueryId, callbackMessageId } }];"
+        "jsCode": "const { chatId, text, raw, shouldReload: inReload, isCallback, callbackQueryId, callbackMessageId } = $json;\nconst staticData = $getWorkflowStaticData('global');\nstaticData.cot = staticData.cot || {};\nconst hasSession = !!staticData.cot?.[chatId];\nlet action = null;\nconst incomingText = String(text || '').trim();\nconst isReloadCommand = incomingText === '/reload';\nconst shouldReload = !!inReload || isReloadCommand;\n\nconst setMode = (mode) => {\n  if (!mode) return;\n  const current = staticData.cot[chatId] || {};\n  staticData.cot[chatId] = { ...current, mode: mode.toUpperCase() };\n};\n\nif (isReloadCommand) {\n  action = 'RELOAD_DONE';\n} else if (raw?.message?.text && raw.message.text.startsWith('/')) {\n  action = 'START';\n  staticData.cot[chatId] = {};\n} else if (raw?.callback_query?.data) {\n  const data = raw.callback_query.data;\n  if (data === 'MENU|AVANZADA' || data === 'MODE|ADV') {\n    setMode('ADV');\n    action = 'MENU_SELECTION';\n  } else if (data === 'MODE|FAST') {\n    setMode('FAST');\n    action = 'MENU_SELECTION';\n  } else {\n    action = 'COTIZACION_FLOW';\n  }\n} else if (raw?.message?.text && !raw.message.text.startsWith('/') && hasSession) {\n  action = 'COTIZACION_FLOW';\n}\n\nconst outText = action === 'RELOAD_DONE' ? '✅ Catálogo actualizado' : text;\nreturn [{ json: { chatId, text: outText, action, shouldReload, isReloadCommand, raw, isCallback, callbackQueryId, callbackMessageId } }];"
       },
       "id": "a86dbec8-4b9b-47b5-9763-62a95450a235",
       "name": "Router Maestro",
@@ -381,10 +379,10 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.telegram.org/bot8335208719:AAHyaYQ2wKfjGEWOf9V1Zrp6KOE7HYWbJrY/sendMessage",
+        "url": "={{ $json.isCallback && $json.callbackMessageId ? 'https://api.telegram.org/bot8335208719:AAHyaYQ2wKfjGEWOf9V1Zrp6KOE7HYWbJrY/editMessageText' : 'https://api.telegram.org/bot8335208719:AAHyaYQ2wKfjGEWOf9V1Zrp6KOE7HYWbJrY/sendMessage' }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ ({ chat_id: $json.chatId, text: $json.text, parse_mode: 'Markdown', reply_markup: $json.reply_markup || {} }) }}",
+        "jsonBody": "={{ $json.isCallback && $json.callbackMessageId ? ({ chat_id: $json.chatId, message_id: $json.callbackMessageId, text: $json.text, parse_mode: 'Markdown', reply_markup: $json.reply_markup || {} }) : ({ chat_id: $json.chatId, text: $json.text, parse_mode: 'Markdown', reply_markup: $json.reply_markup || {} }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -411,7 +409,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst catalog = staticData.catalog || {};\nstaticData.cot = staticData.cot || {};\n\nconst chatId = $json.chatId;\nconst text = String($json.text ?? '').trim();\nconst callbackMessageId = $json.callbackMessageId ?? null;\nconst callbackQueryId = $json.callbackQueryId ?? null;\nconst isCallback = !!$json.isCallback;\n\nconst money = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });\nconst toNum = (v) => {\n  const s = String(v ?? '').replace(/[^0-9.,\\-]/g, '').replace(/,/g, '');\n  const n = parseFloat(s);\n  return Number.isFinite(n) ? n : 0;\n};\nconst normText = (v) => String(v ?? '').trim().replace(/\\s+/g, ' ');\nconst normLower = (v) => normText(v).toLowerCase();\nconst optionKey = (label, value) => `${normLower(label)}|${normLower(value ?? label)}`;\nconst humanizeStepId = (stepId) => {\n  const safe = String(stepId ?? '').trim();\n  const withSpaces = safe.replace(/[_-]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim();\n  if (!withSpaces) return 'Paso';\n  return withSpaces.split(' ').filter(Boolean).map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');\n};\n\nconst resolveMode = (state) => (state?.mode || 'ADV').toUpperCase();\nconst sanitizeMachine = (value) => String(value ?? '').trim().replace(/\\.docx$/i, '');\nconst ensureRunId = (state) => {\n  if (!state.runId) state.runId = `${Date.now()}_${chatId}`;\n  return state.runId;\n};\nconst formatSelections = (selections) => Array.isArray(selections) && selections.length > 0\n  ? selections.map((sel) => {\n      const stepLabel = humanizeStepId(sel.step ?? 'Paso');\n      const priceText = toNum(sel.price) > 0 ? ` (+$${money(sel.price)} USD)` : ' (+$0 USD)';\n      return `- ${stepLabel}: ${sel.value ?? 'N/A'}${priceText}`;\n    })\n  : ['- Sin opciones'];\n\nconst output = (payload) => [{ json: { ...payload, chatId, callbackMessageId, callbackQueryId, isCallback } }];\n\nif (!chatId) {\n  return output({ text: '⚠️ Falta chatId. Revisa el nodo Normalize Telegram.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState: null });\n}\n\nconst getStep = (machine, stepId) => {\n  const steps = Array.isArray(machine?.steps) ? machine.steps : [];\n  const sid = String(stepId ?? '');\n  return steps.find((s) => String(s?.id ?? '') === sid) || null;\n};\n\nconst resolveSelectedOption = (machine, stepId, selectedValue) => {\n  const step = getStep(machine, stepId);\n  if (!step) return null;\n  const valueDecoded = decodeURIComponent(String(selectedValue ?? ''));\n  const options = Array.isArray(step.options) ? step.options : [];\n  return options.find((opt) => {\n    const optValue = String(opt?.value ?? opt?.label ?? '');\n    const optLabel = String(opt?.label ?? opt?.value ?? '');\n    return normLower(optValue) === normLower(valueDecoded) || normLower(optLabel) === normLower(valueDecoded);\n  }) || null;\n};\n\nconst recomputeTotal = (state) => {\n  const extras = Array.isArray(state.selections) ? state.selections.reduce((sum, sel) => sum + toNum(sel.price), 0) : 0;\n  state.totalPrice = toNum(state.basePrice) + extras;\n};\n\nconst startFastDefaults = (userState, machine) => {\n  const steps = Array.isArray(machine.steps) ? machine.steps : [];\n  const selections = [];\n\n  steps.forEach((step, idx) => {\n    const options = Array.isArray(step?.options) ? step.options : [];\n    if (options.length === 0) return;\n    const defaultOpt = options.find((opt) => String(opt.label ?? '').includes('(Default)')) || options[0];\n    const chosenValue = String(defaultOpt.value ?? defaultOpt.label ?? 'NA');\n    const chosenPrice = toNum(defaultOpt.price);\n    selections.push({ step: step?.id ?? `step_${idx + 1}`, value: chosenValue, price: chosenPrice });\n  });\n\n  userState.selections = selections;\n  userState.stepIndex = steps.length;\n  userState.stage = 'await_customer_name';\n  recomputeTotal(userState);\n\n  return { text: '⚡️ *Modo Rápido activado*\\nSe seleccionaron las opciones por defecto. Escribe el *nombre del cliente*.', reply_markup: {} };\n};\n\nlet userState = staticData.cot[chatId] || null;\nconst isStartMachine = text.includes('|') && text.endsWith('|START');\nconst isBasePick = text.includes('|BP|');\nconst isOpt = text.includes('|OPT|');\n\nif (isStartMachine) {\n  const model = sanitizeMachine(text.split('|')[0]);\n  const machine = catalog[model];\n  if (!machine) return output({ text: '⚠️ Error: Máquina no encontrada. Ejecuta /start.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n\n  const mode = resolveMode(userState);\n  const listBasePrice = toNum(machine.basePrice);\n  userState = { mode, stage: 'await_base_price_choice', machine: model, stepIndex: 0, selections: [], basePrice: listBasePrice, totalPrice: listBasePrice, customer: {}, advisor: '' };\n  ensureRunId(userState);\n  staticData.cot[chatId] = userState;\n\n  return output({\n    text: `Precio base (Google Sheets): $${money(listBasePrice)} USD`,\n    reply_markup: {\n      inline_keyboard: [\n        [{ text: `✅ Continuar con $${money(listBasePrice)}`, callback_data: `${model}|BP|LIST` }],\n      ],\n    },\n    isFinished: true,\n    isReadyToGenerate: false,\n    quotePayload: null,\n    userState,\n  });\n}\n\nif (isBasePick) {\n  const [rawModel, , action] = text.split('|');\n  const model = sanitizeMachine(rawModel);\n  const machine = catalog[model];\n  if (!userState || !machine || userState.machine !== model) return output({ text: '⚠️ Sesión expirada o modelo no coincide. Ejecuta /start.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n\n  if (action === 'MANUAL') {\n    userState.stage = 'config';\n    recomputeTotal(userState);\n    staticData.cot[chatId] = userState;\n    return output({ text: '⚠️ El precio base manual fue deshabilitado. Se usa siempre el precio de Google Sheets.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n  }\n\n  userState.basePrice = toNum(machine.basePrice);\n  userState.totalPrice = toNum(machine.basePrice);\n  userState.stage = 'config';\n  staticData.cot[chatId] = userState;\n  if (userState.mode === 'FAST') {\n    const fastResp = startFastDefaults(userState, machine);\n    staticData.cot[chatId] = userState;\n    return output({ ...fastResp, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n  }\n}\n\nif (!isCallback && userState?.stage === 'await_base_price_manual') {\n  userState.stage = 'config';\n  userState.basePrice = toNum(catalog[userState.machine]?.basePrice);\n  recomputeTotal(userState);\n  staticData.cot[chatId] = userState;\n  return output({ text: '⚠️ El precio base manual fue deshabilitado. Se usa siempre Google Sheets.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n}\n\nif (isOpt) {\n  const [rawModel, , stepIdRaw, selectedValueRaw = ''] = text.split('|');\n  const model = sanitizeMachine(rawModel);\n  const stepId = String(stepIdRaw ?? '');\n  const machine = catalog[model];\n  if (!userState || userState.machine !== model || !machine) return output({ text: '⚠️ Sesión expirada o modelo no coincide. Ejecuta /start.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n  if (userState.mode === 'FAST') return output({ text: '⚡️ Estás en Modo Rápido. Las opciones ya fueron auto-seleccionadas. Envía el nombre del cliente.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n\n  const selectedOpt = resolveSelectedOption(machine, stepId, selectedValueRaw);\n  if (!selectedOpt) {\n    return output({ text: '⚠️ Opción no válida para este paso. Ejecuta /start para recargar catálogo.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n  }\n\n  const value = String(selectedOpt.value ?? selectedOpt.label ?? decodeURIComponent(selectedValueRaw));\n  const price = toNum(selectedOpt.price);\n  const rest = Array.isArray(userState.selections) ? userState.selections.filter((s) => String(s.step ?? '') !== stepId) : [];\n  userState.selections = [...rest, { step: stepId, value, price }];\n  userState.stepIndex += 1;\n  recomputeTotal(userState);\n}\n\nif (!isCallback && userState) {\n  const msg = normText(text);\n  if (userState.stage === 'await_customer_name') {\n    userState.customer.name = msg;\n    userState.stage = 'await_customer_email';\n    staticData.cot[chatId] = userState;\n    return output({ text: '📝 Ahora escribe el *correo del cliente*:', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n  }\n  if (userState.stage === 'await_customer_email') {\n    userState.customer.email = msg;\n    userState.stage = 'await_advisor';\n    staticData.cot[chatId] = userState;\n    return output({ text: '🧑‍💼 Ahora escribe el *nombre del ASESOR*:', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n  }\n  if (userState.stage === 'await_advisor') {\n    userState.advisor = msg;\n    userState.stage = 'done';\n    const payload = {\n      machine: sanitizeMachine(userState.machine),\n      basePrice: toNum(userState.basePrice),\n      totalPrice: toNum(userState.totalPrice),\n      selections: userState.selections,\n      customer: userState.customer,\n      advisor: userState.advisor,\n      runId: ensureRunId(userState),\n    };\n    userState.payloadFinal = payload;\n    staticData.cot[chatId] = userState;\n    const optionLines = formatSelections(userState.selections).join('\\n');\n    const summaryText = `🛠️ *Cotización ${userState.machine}*\\n*Máquina:* ${userState.machine}\\n*Base:* $${money(payload.basePrice)} USD\\n*Opciones:*\\n${optionLines}\\n*Total:* $${money(payload.totalPrice)} USD\\n*Cliente:* ${userState.customer.name || 'N/A'}\\n*Correo:* ${userState.customer.email || 'N/A'}\\n*Asesor:* ${userState.advisor || 'N/A'}\\n✅ Confirmo datos. Procediendo a generar y enviar PDF.`;\n    return output({ text: summaryText, reply_markup: {}, isFinished: true, isReadyToGenerate: true, quotePayload: payload, userState });\n  }\n}\n\nif (!userState) return output({ text: 'Usa /start y selecciona una máquina para iniciar.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState: null });\nconst machineConfig = catalog[userState.machine];\nif (!machineConfig) return output({ text: '⚠️ Catálogo no disponible. Ejecuta /start para recargar.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n\nlet response = {};\nlet isFinished = false;\n\nif (userState.stage === 'config') {\n  const currentIndex = userState.stepIndex;\n  if (currentIndex < machineConfig.steps.length) {\n    const step = machineConfig.steps[currentIndex];\n    const stepOptions = Array.isArray(step.options) ? step.options : [];\n    const inline_keyboard = [];\n    const seenOptions = new Set();\n\n    stepOptions.forEach((opt) => {\n      const price = toNum(opt.price);\n      const value = String(opt.value ?? opt.label ?? 'NA');\n      const key = optionKey(opt.label ?? value, value);\n      if (seenOptions.has(key)) return;\n      seenOptions.add(key);\n      const priceText = price > 0 ? ` (+$${money(price)})` : '';\n      inline_keyboard.push([{ text: `${opt.label ?? value}${priceText}`, callback_data: `${userState.machine}|OPT|${step.id}|${encodeURIComponent(value)}` }]);\n    });\n\n    response = {\n      text: `🛠️ *${userState.machine}* (Paso ${currentIndex + 1}/${machineConfig.steps.length})\\n💰 Total: $${money(userState.totalPrice)} USD\\n\\nSelecciona: *${step.question || humanizeStepId(step.id || `Paso ${currentIndex + 1}`)}*`,\n      reply_markup: { inline_keyboard },\n    };\n  } else {\n    userState.stage = 'await_customer_name';\n    isFinished = true;\n    response = { text: `✅ *Cotización lista*\\nModelo: *${userState.machine}*\\nTotal: *$${money(userState.totalPrice)} USD*\\n\\nEscribe el *NOMBRE del Cliente*:`, reply_markup: {} };\n  }\n} else if (userState.stage === 'await_customer_name') {\n  isFinished = true;\n  response = { text: '📝 Ahora escribe el *NOMBRE del cliente*:', reply_markup: {} };\n} else if (userState.stage === 'await_customer_email') {\n  isFinished = true;\n  response = { text: '📝 Ahora escribe el *correo del cliente*:', reply_markup: {} };\n} else if (userState.stage === 'await_advisor') {\n  isFinished = true;\n  response = { text: '🧑‍💼 Ahora escribe el *nombre del ASESOR*:', reply_markup: {} };\n} else if (userState.stage === 'done') {\n  const payload = userState.payloadFinal || {\n    machine: sanitizeMachine(userState.machine),\n    basePrice: toNum(userState.basePrice),\n    totalPrice: toNum(userState.totalPrice),\n    selections: userState.selections,\n    customer: userState.customer,\n    advisor: userState.advisor || '',\n    runId: ensureRunId(userState),\n  };\n  response = { text: '✅ Listo. Procediendo a generar y enviar PDF.', reply_markup: {}, quotePayload: payload, isReadyToGenerate: true };\n  isFinished = true;\n}\n\nstaticData.cot[chatId] = userState;\nreturn output({\n  text: response.text || '',\n  reply_markup: response.reply_markup || {},\n  isFinished: !!isFinished,\n  isReadyToGenerate: !!response.quotePayload,\n  quotePayload: response.quotePayload || null,\n  userState,\n});"
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst catalog = staticData.catalog || {};\nconst priceIndex = staticData.priceIndex || {};\nstaticData.cot = staticData.cot || {};\n\nconst chatId = $json.chatId;\nconst text = String($json.text ?? '').trim();\nconst callbackMessageId = $json.callbackMessageId ?? null;\nconst callbackQueryId = $json.callbackQueryId ?? null;\nconst isCallback = !!$json.isCallback;\n\nconst money = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });\nconst toNum = (v) => {\n  const s = String(v ?? '').replace(/[^0-9.,\\-]/g, '').replace(/,/g, '');\n  const n = parseFloat(s);\n  return Number.isFinite(n) ? n : 0;\n};\nconst normText = (v) => String(v ?? '').trim().replace(/\\s+/g, ' ');\nconst normModel = (v) => String(v ?? '').trim().toUpperCase();\nconst normStep = (v) => String(v ?? '').trim();\nconst normValue = (v) => String(v ?? '').trim();\nconst normalizeOptionValue = (v) => {\n  const value = normValue(v);\n  const up = value.toUpperCase();\n  if (['TRUE', 'SI', 'SÍ', 'YES'].includes(up)) return 'YES';\n  if (['FALSE', 'NO'].includes(up)) return 'NO';\n  return value;\n};\nconst sheetPriceKey = (model, step, value) => `${normModel(model)}|${normStep(step)}|${normalizeOptionValue(value)}`;\nconst getSheetPrice = (model, step, value) => {\n  const direct = priceIndex[sheetPriceKey(model, step, value)];\n  if (direct === undefined || direct === null || direct === '') return null;\n  const n = toNum(direct);\n  return Number.isFinite(n) ? n : null;\n};\nconst resolvePrice = (model, step, value, fallbackPrice) => {\n  const fromSheet = getSheetPrice(model, step, value);\n  return fromSheet !== null ? fromSheet : toNum(fallbackPrice);\n};\nconst optionKey = (label, value) => `${normText(label).toLowerCase()}|${normText(value ?? label).toLowerCase()}`;\nconst humanizeStepId = (stepId) => {\n  const safe = String(stepId ?? '').trim();\n  const withSpaces = safe.replace(/[_-]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim();\n  if (!withSpaces) return 'Paso';\n  return withSpaces.split(' ').filter(Boolean).map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');\n};\n\nconst resolveMode = (state) => (state?.mode || 'ADV').toUpperCase();\nconst formatSelections = (selections) => Array.isArray(selections) && selections.length > 0\n  ? selections.map((sel) => {\n      const stepLabel = humanizeStepId(sel.step ?? 'Paso');\n      const priceText = toNum(sel.price) > 0 ? ` (+$${money(sel.price)} USD)` : ' (+$0 USD)';\n      return `- ${stepLabel}: ${sel.value ?? 'N/A'}${priceText}`;\n    })\n  : ['- Sin opciones'];\n\nconst startFastDefaults = (userState, machine) => {\n  const steps = Array.isArray(machine.steps) ? machine.steps : [];\n  const selections = [];\n  let totalPrice = toNum(userState.basePrice);\n  steps.forEach((step, idx) => {\n    const options = Array.isArray(step?.options) ? step.options : [];\n    if (options.length === 0) return;\n    const defaultOpt = options.find((opt) => String(opt.label ?? '').includes('(Default)')) || options[0];\n    const rawValue = defaultOpt.value ?? defaultOpt.label ?? 'NA';\n    const chosenPrice = resolvePrice(userState.machine, step?.id ?? `step_${idx + 1}`, rawValue, defaultOpt.price);\n    selections.push({ step: step?.id ?? `step_${idx + 1}`, value: rawValue, price: chosenPrice });\n    totalPrice += chosenPrice;\n  });\n  userState.selections = selections;\n  userState.totalPrice = totalPrice;\n  userState.stepIndex = steps.length;\n  userState.stage = 'await_customer_name';\n  return { text: '⚡️ *Modo Rápido activado*\\nSe seleccionaron las opciones por defecto. Escribe el *nombre del cliente*.', reply_markup: {} };\n};\n\nconst output = (payload) => [{ json: { ...payload, chatId, callbackMessageId, callbackQueryId, isCallback } }];\n\nif (!chatId) {\n  return output({ text: '⚠️ Falta chatId. Revisa el nodo Normalize Telegram.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState: null });\n}\n\nlet userState = staticData.cot[chatId] || null;\nconst isStartMachine = text.includes('|') && text.endsWith('|START');\nconst isBasePick = text.includes('|BP|');\nconst isOpt = text.includes('|OPT|');\n\nif (isStartMachine) {\n  const model = text.split('|')[0];\n  const machine = catalog[model];\n  if (!machine) return output({ text: '⚠️ Error: Máquina no encontrada. Ejecuta /start.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n\n  const mode = resolveMode(userState);\n  const listBasePrice = toNum(machine.basePrice);\n  userState = { mode, stage: 'await_base_price_choice', machine: model, stepIndex: 0, selections: [], basePrice: listBasePrice, totalPrice: listBasePrice, customer: {}, advisor: '' };\n  staticData.cot[chatId] = userState;\n\n  return output({\n    text: `💰 Escribe o elige el *PRECIO BASE* para *${model}*:`,\n    reply_markup: {\n      inline_keyboard: [\n        [{ text: `✅ Usar precio de lista ($${money(listBasePrice)} USD)`, callback_data: `${model}|BP|LIST` }],\n        [{ text: '✏️ Cambiar precio', callback_data: `${model}|BP|MANUAL` }],\n      ],\n    },\n    isFinished: true,\n    isReadyToGenerate: false,\n    quotePayload: null,\n    userState,\n  });\n}\n\nif (isBasePick) {\n  const [model, , action] = text.split('|');\n  const machine = catalog[model];\n  if (!userState || !machine || userState.machine !== model) return output({ text: '⚠️ Sesión expirada o modelo no coincide. Ejecuta /start.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n\n  if (action === 'MANUAL') {\n    userState.stage = 'await_base_price_manual';\n    staticData.cot[chatId] = userState;\n    return output({ text: '✏️ Escribe el nuevo *PRECIO BASE* (ejemplo: 16995).', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n  }\n\n  userState.basePrice = toNum(machine.basePrice);\n  userState.totalPrice = toNum(machine.basePrice);\n  userState.stage = 'config';\n  staticData.cot[chatId] = userState;\n  if (userState.mode === 'FAST') {\n    const fastResp = startFastDefaults(userState, machine);\n    staticData.cot[chatId] = userState;\n    return output({ ...fastResp, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n  }\n}\n\nif (!isCallback && userState?.stage === 'await_base_price_manual') {\n  const manualPrice = toNum(text);\n  if (manualPrice <= 0) {\n    return output({ text: '⚠️ Precio inválido. Escribe un número válido, por ejemplo: 16995', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n  }\n  const machine = catalog[userState.machine];\n  userState.basePrice = manualPrice;\n  userState.totalPrice = manualPrice;\n  userState.stage = 'config';\n  staticData.cot[chatId] = userState;\n  if (userState.mode === 'FAST') {\n    const fastResp = startFastDefaults(userState, machine);\n    staticData.cot[chatId] = userState;\n    return output({ ...fastResp, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n  }\n}\n\nif (isOpt) {\n  const [model, , stepId, val, rawPrice] = text.split('|');\n  const price = resolvePrice(model, stepId, val, rawPrice);\n  if (!userState || userState.machine !== model) return output({ text: '⚠️ Sesión expirada o modelo no coincide. Ejecuta /start.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n  if (userState.mode === 'FAST') return output({ text: '⚡️ Estás en Modo Rápido. Las opciones ya fueron auto-seleccionadas. Envía el nombre del cliente.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n  userState.selections.push({ step: stepId, value: normalizeOptionValue(val), price });\n  userState.totalPrice = toNum(userState.totalPrice) + price;\n  userState.stepIndex += 1;\n}\n\nif (!isCallback && userState) {\n  const msg = normText(text);\n  if (userState.stage === 'await_customer_name') {\n    userState.customer.name = msg;\n    userState.stage = 'await_customer_email';\n    staticData.cot[chatId] = userState;\n    return output({ text: '📝 Ahora escribe el *correo del cliente*:', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n  }\n  if (userState.stage === 'await_customer_email') {\n    userState.customer.email = msg;\n    userState.stage = 'await_advisor';\n    staticData.cot[chatId] = userState;\n    return output({ text: '🧑‍💼 Ahora escribe el *nombre del ASESOR*:', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n  }\n  if (userState.stage === 'await_advisor') {\n    userState.advisor = msg;\n    userState.stage = 'done';\n    const payload = {\n      machine: userState.machine,\n      basePrice: toNum(userState.basePrice),\n      totalPrice: toNum(userState.totalPrice),\n      selections: userState.selections,\n      customer: userState.customer,\n      advisor: userState.advisor,\n    };\n    userState.payloadFinal = payload;\n    staticData.cot[chatId] = userState;\n    const optionLines = formatSelections(userState.selections).join('\\n');\n    const summaryText = `🛠️ *Cotización ${userState.machine}*\\n*Máquina:* ${userState.machine}\\n*Base:* $${money(payload.basePrice)} USD\\n*Opciones:*\\n${optionLines}\\n*Total:* $${money(payload.totalPrice)} USD\\n*Cliente:* ${userState.customer.name || 'N/A'}\\n*Correo:* ${userState.customer.email || 'N/A'}\\n*Asesor:* ${userState.advisor || 'N/A'}\\n✅ Confirmo datos. Procediendo a generar y enviar PDF.`;\n    return output({ text: summaryText, reply_markup: {}, isFinished: true, isReadyToGenerate: true, quotePayload: payload, userState });\n  }\n}\n\nif (!userState) return output({ text: 'Usa /start y selecciona una máquina para iniciar.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState: null });\nconst machineConfig = catalog[userState.machine];\nif (!machineConfig) return output({ text: '⚠️ Catálogo no disponible. Ejecuta /start para recargar.', reply_markup: {}, isFinished: true, isReadyToGenerate: false, quotePayload: null, userState });\n\nlet response = {};\nlet isFinished = false;\n\nif (userState.stage === 'config') {\n  const currentIndex = userState.stepIndex;\n  if (currentIndex < machineConfig.steps.length) {\n    const step = machineConfig.steps[currentIndex];\n    const stepOptions = Array.isArray(step.options) ? step.options : [];\n    const inline_keyboard = [];\n    const seenOptions = new Set();\n\n    stepOptions.forEach((opt) => {\n      const value = opt.value ?? opt.label ?? 'NA';\n      const price = resolvePrice(userState.machine, step.id, value, opt.price);\n      const key = optionKey(opt.label ?? value, value);\n      if (seenOptions.has(key)) return;\n      seenOptions.add(key);\n      const priceText = price > 0 ? ` (+$${money(price)})` : '';\n      inline_keyboard.push([{ text: `${opt.label ?? value}${priceText}`, callback_data: `${userState.machine}|OPT|${step.id}|${value}|${price}` }]);\n    });\n\n    response = {\n      text: `🛠️ *${userState.machine}* (Paso ${currentIndex + 1}/${machineConfig.steps.length})\\n💰 Total: $${money(userState.totalPrice)} USD\\n\\nSelecciona: *${step.question || humanizeStepId(step.id || `Paso ${currentIndex + 1}`)}*`,\n      reply_markup: { inline_keyboard },\n    };\n  } else {\n    userState.stage = 'await_customer_name';\n    isFinished = true;\n    response = { text: `✅ *Cotización lista*\\nModelo: *${userState.machine}*\\nTotal: *$${money(userState.totalPrice)} USD*\\n\\nEscribe el *NOMBRE del Cliente*:`, reply_markup: {} };\n  }\n} else if (userState.stage === 'await_customer_name') {\n  isFinished = true;\n  response = { text: '📝 Ahora escribe el *NOMBRE del cliente*:', reply_markup: {} };\n} else if (userState.stage === 'await_customer_email') {\n  isFinished = true;\n  response = { text: '📝 Ahora escribe el *correo del cliente*:', reply_markup: {} };\n} else if (userState.stage === 'await_advisor') {\n  isFinished = true;\n  response = { text: '🧑‍💼 Ahora escribe el *nombre del ASESOR*:', reply_markup: {} };\n} else if (userState.stage === 'done') {\n  const payload = userState.payloadFinal || {\n    machine: userState.machine,\n    basePrice: toNum(userState.basePrice),\n    totalPrice: toNum(userState.totalPrice),\n    selections: userState.selections,\n    customer: userState.customer,\n    advisor: userState.advisor || '',\n  };\n  response = { text: '✅ Listo. Procediendo a generar y enviar PDF.', reply_markup: {}, quotePayload: payload, isReadyToGenerate: true };\n  isFinished = true;\n}\n\nstaticData.cot[chatId] = userState;\nreturn output({\n  text: response.text || '',\n  reply_markup: response.reply_markup || {},\n  isFinished: !!isFinished,\n  isReadyToGenerate: !!response.quotePayload,\n  quotePayload: response.quotePayload || null,\n  userState,\n});"
       },
       "id": "c44f6661-6c95-475c-a4dc-a166252e44fd",
       "name": "Lógica Cotizador",
@@ -492,7 +490,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $items('¿Terminó?')[0]?.json ?? $json;\nconst userState = input.userState || {};\nconst customer = userState.customer || {};\nconst toNum = (v) => { const s = String(v ?? '').replace(/[^0-9.\\-]/g, ''); const n = parseFloat(s); return Number.isFinite(n) ? n : 0; };\nconst sanitizeMachine = (value) => String(value ?? '').trim().replace(/\\.docx$/i, '');\n\nconst machineRaw = userState.machine ?? input.quotePayload?.machine ?? '';\nconst machine = sanitizeMachine(machineRaw);\nconst basePrice = Number.isFinite(Number(userState.basePrice)) ? Number(userState.basePrice) : Number(input.quotePayload?.basePrice ?? 0);\nconst selections = Array.isArray(userState.selections)\n  ? userState.selections.map((sel) => ({ step: sel.step ?? '', value: sel.value ?? '', price: toNum(sel.price) }))\n  : [];\nconst selectionsTotal = selections.reduce((sum, sel) => sum + toNum(sel.price), 0);\nconst totalPrice = Number.isFinite(Number(userState.totalPrice)) ? Number(userState.totalPrice) : basePrice + selectionsTotal;\nconst runId = String(userState.runId ?? input.quotePayload?.runId ?? input.runId ?? `${Date.now()}_${input.chatId ?? 'chat'}`);\n\nconst payloadCanonical = {\n  machine,\n  basePrice,\n  totalPrice,\n  selections,\n  customer: {\n    name: customer.name ?? '',\n    email: customer.email ?? '',\n  },\n  runId,\n};\n\nconst fastapiBody = {\n  ...payloadCanonical,\n  modelo: payloadCanonical.machine,\n  nombre_cliente: payloadCanonical.customer.name,\n  email: payloadCanonical.customer.email,\n  asesor: userState.advisor ?? '',\n  precio_base: payloadCanonical.basePrice,\n  precio_cambiado: payloadCanonical.totalPrice,\n  selecciones: payloadCanonical.selections.map((s) => ({ paso: s.step, opcion: s.value, precio: s.price })),\n};\n\nreturn [{ json: { ...input, runId, fastapiBody } }];"
+        "jsCode": "const input = $items('¿Terminó?')[0]?.json ?? $json;\nconst userState = input.userState || {};\nconst customer = userState.customer || {};\nconst toNum = (v) => { const s = String(v ?? '').replace(/[^0-9.\\-]/g, ''); const n = parseFloat(s); return Number.isFinite(n) ? n : 0; };\n\nconst machine = userState.machine ?? input.quotePayload?.machine ?? '';\nconst basePrice = Number.isFinite(Number(userState.basePrice)) ? Number(userState.basePrice) : Number(input.quotePayload?.basePrice ?? 0);\nconst selections = Array.isArray(userState.selections)\n  ? userState.selections.map((sel) => ({ step: sel.step ?? '', value: sel.value ?? '', price: toNum(sel.price) }))\n  : [];\nconst selectionsTotal = selections.reduce((sum, sel) => sum + toNum(sel.price), 0);\nconst totalPrice = Number.isFinite(Number(userState.totalPrice)) ? Number(userState.totalPrice) : basePrice + selectionsTotal;\n\nconst payloadCanonical = {\n  machine,\n  basePrice,\n  totalPrice,\n  selections,\n  customer: {\n    name: customer.name ?? '',\n    email: customer.email ?? '',\n  },\n};\n\nconst fastapiBody = {\n  ...payloadCanonical,\n  modelo: payloadCanonical.machine,\n  nombre_cliente: payloadCanonical.customer.name,\n  email: payloadCanonical.customer.email,\n  asesor: userState.advisor ?? '',\n  precio_base: payloadCanonical.basePrice,\n  precio_cambiado: payloadCanonical.totalPrice,\n  selecciones: payloadCanonical.selections.map((s) => ({ paso: s.step, opcion: s.value, precio: s.price })),\n};\n\nreturn [{ json: { ...input, fastapiBody } }];"
       },
       "id": "f0e4f8aa-cfdc-4db5-a39a-e9ee0c66c9b9",
       "name": "Preparar Body FastAPI",
@@ -675,45 +673,66 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "=https://kenisha-wrongful-jetta.ngrok-free.dev/sync-catalog",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "X-VC999-TOKEN",
-              "value": "={{ $env.CATALOG_SYNC_TOKEN }}"
-            }
-          ]
-        },
-        "options": {
-          "timeout": 15000
-        }
-      },
-      "id": "bd09996a-5d6a-4b86-be4e-7a4f9d2344cf",
-      "name": "Sync Catalog Backend",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        720,
-        112
-      ]
-    },
-    {
-      "parameters": {
         "conditions": {
           "boolean": [
             {
-              "value1": "={{ $json.ok }}",
+              "value1": "={{ $json.shouldRefreshPrices }}",
               "value2": true
             }
           ]
         }
       },
-      "id": "ddcc599a-aec5-49cd-8bbe-61a6c65e370d",
-      "name": "¿Sync catálogo OK?",
+      "id": "3e2b6f15-00bb-4e9d-92a7-3f7397e013f2",
+      "name": "¿Refrescar Precios?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
+      "position": [
+        500,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY",
+          "mode": "list",
+          "cachedResultName": "Catalogo_Maquinas_VC999_full_v3",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "DB_Precios",
+          "mode": "name"
+        },
+        "returnAll": true,
+        "options": {
+          "valueRenderMode": "UNFORMATTED_VALUE"
+        }
+      },
+      "id": "5f6dcf55-4cbf-42cc-a7f4-5b6a2f3044d4",
+      "name": "Cargar Precios Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        720,
+        112
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "y849MEubVdTfoMXc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const baseInput = $('Verificar Memoria').first()?.json || {};\nconst rows = $input.all().map((item) => item.json || {});\n\nconst normModel = (v) => String(v ?? '').trim().toUpperCase();\nconst normStep = (v) => String(v ?? '').trim();\nconst normOption = (v) => String(v ?? '').trim();\nconst toNum = (v) => {\n  const s = String(v ?? '').replace(/,/g, '').replace(/[^0-9.\\-]/g, '');\n  const n = parseFloat(s);\n  return Number.isFinite(n) ? n : 0;\n};\nconst normKey = (k) => String(k || '').toLowerCase().trim().replace(/\\s+/g, '').replace(/[_\\-]/g, '');\nconst getVal = (obj, terms) => {\n  if (!obj) return undefined;\n  const keys = Object.keys(obj);\n  const map = new Map(keys.map((k) => [normKey(k), k]));\n  for (const t of terms) {\n    const nk = normKey(t);\n    if (map.has(nk)) return obj[map.get(nk)];\n  }\n  for (const t of terms) {\n    const nk = normKey(t);\n    const partial = keys.find((k) => normKey(k).includes(nk));\n    if (partial) return obj[partial];\n  }\n  return undefined;\n};\nconst isActive = (v) => {\n  const s = String(v ?? '').trim().toUpperCase();\n  return s === '' || ['TRUE', '1', 'YES', 'SI', 'SÍ', 'Y', 'ACTIVO'].includes(s);\n};\n\nconst priceIndex = {};\nfor (const row of rows) {\n  const activo = getVal(row, ['activo', 'active', 'enabled', 'status']);\n  if (!isActive(activo)) continue;\n\n  const modelo = normModel(getVal(row, ['modelo', 'model', 'maquina', 'machine']));\n  const paso = normStep(getVal(row, ['paso', 'step', 'paso_id', 'step_id']));\n  let opcionValor = normOption(getVal(row, ['opcion_valor', 'value', 'opcion', 'option', 'opcion_label', 'label']));\n  const precio = toNum(getVal(row, ['precio_extra_us', 'precio', 'price', 'extra', 'opcion_precio', 'costo']));\n\n  if (!modelo || !paso || !opcionValor) continue;\n  if (['TRUE', 'SI', 'SÍ'].includes(opcionValor.toUpperCase())) opcionValor = 'YES';\n  if (['FALSE', 'NO'].includes(opcionValor.toUpperCase())) opcionValor = 'NO';\n\n  const key = `${modelo}|${paso}|${opcionValor}`;\n  priceIndex[key] = precio;\n}\n\nconst staticData = $getWorkflowStaticData('global');\nstaticData.priceIndex = priceIndex;\nstaticData.pricesLoadedAt = new Date().toISOString();\n\nreturn [{\n  json: {\n    ...baseInput,\n    priceIndexLoaded: true,\n    priceIndexSize: Object.keys(priceIndex).length,\n    pricesLoadedAt: staticData.pricesLoadedAt,\n  },\n}];"
+      },
+      "id": "9a9f8035-2abe-4fac-a74f-02a9b45accc3",
+      "name": "Guardar priceIndex",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         960,
         112
@@ -748,7 +767,7 @@
       "main": [
         [
           {
-            "node": "¿Cargar BD?",
+            "node": "¿Refrescar Precios?",
             "type": "main",
             "index": 0
           }
@@ -850,7 +869,7 @@
       "main": [
         [
           {
-            "node": "Sync Catalog Backend",
+            "node": "Enviar Menú",
             "type": "main",
             "index": 0
           }
@@ -996,27 +1015,44 @@
         ]
       ]
     },
-    "Sync Catalog Backend": {
+    "¿Refrescar Precios?": {
       "main": [
         [
           {
-            "node": "¿Sync catálogo OK?",
+            "node": "Cargar Precios Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "¿Cargar BD?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "¿Sync catálogo OK?": {
+    "Cargar Precios Sheets": {
       "main": [
         [
           {
-            "node": "Enviar Menú",
+            "node": "Guardar priceIndex",
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
+      ]
+    },
+    "Guardar priceIndex": {
+      "main": [
+        [
+          {
+            "node": "¿Cargar BD?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
