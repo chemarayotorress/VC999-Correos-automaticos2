@@ -24,6 +24,7 @@ except Exception:  # pragma: no cover - dependencia opcional
 
 from machine_catalog import load_catalog
 from template_mapping import TemplateMappingManager
+from template_resolver import normalize_model, resolve_template_path
 
 APP_TITLE = "VC999 Packaging+ Cotizador"
 DEFAULT_CONCEPTS = [("Con orden de compra", "35"), ("Contra aviso de entrega", "55"), ("Al instalar", "10")]
@@ -311,14 +312,18 @@ def generar_cotizacion_backend(
     No depende de la GUI y devuelve un diccionario con los datos relevantes.
     """
 
-    if not modelo:
+    model_normalized = normalize_model(modelo)
+    if not model_normalized:
         raise ValueError("Se requiere un modelo")
-    template_name = modelo if modelo.lower().endswith(".docx") else f"{modelo}.docx"
+
+    template_path = resolve_template_path(model_normalized)
+    if template_path is None:
+        raise FileNotFoundError(f"No se encontró la plantilla para el modelo {model_normalized}")
+
+    template_name = template_path.name
 
     catalog = _normalize_machine_catalog(load_catalog())
-    conf = catalog.get(template_name)
-    if conf is None:
-        raise ValueError(f"Modelo no encontrado en catálogo: {template_name}")
+    conf = catalog.get(template_name, {"base": Decimal("0"), "options": {}})
 
     base = conf.get("base", Decimal("0"))
     overrides = opciones_overrides or {}
@@ -448,9 +453,7 @@ def generar_cotizacion_backend(
     if Document is None:
         raise RuntimeError("python-docx no está instalado")
 
-    tpl_path = os.path.join(_app_dir(), template_name)
-    if not os.path.exists(tpl_path):
-        raise FileNotFoundError(f"No se encontró la plantilla {template_name}")
+    tpl_path = str(template_path)
 
     doc = Document(tpl_path)
     docx_replace_placeholders(doc, data)
@@ -514,7 +517,7 @@ def generar_cotizacion_desde_json(datos: dict) -> str:
     if not isinstance(datos, dict):
         raise ValueError("Se esperaba un diccionario de datos")
 
-    modelo = (datos.get("modelo") or "").strip()
+    modelo = normalize_model(datos.get("machine") or datos.get("modelo") or datos.get("plantilla"))
     cliente = (datos.get("nombre_cliente") or datos.get("cliente") or "").strip()
     if not modelo:
         raise ValueError("El campo 'modelo' es obligatorio")

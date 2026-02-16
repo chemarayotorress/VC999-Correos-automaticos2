@@ -55,3 +55,29 @@ Recuerda que la exportación a PDF mediante `docx2pdf` requiere Microsoft Word e
 ## Distribución en otras computadoras
 
 Si necesitas compartir la aplicación mediante una memoria USB u otro medio externo, revisa la guía [`docs/USB_DEPLOYMENT.md`](docs/USB_DEPLOYMENT.md). Encontrarás un checklist de archivos a copiar y scripts para automatizar la instalación de dependencias en equipos Windows, macOS o Linux.
+
+## API FastAPI: prueba rápida del hotfix de modelos
+
+Con el servicio levantado (`uvicorn fastapi_app:app --reload`), puedes validar la normalización de modelo/plantilla y el manejo de errores con estos `curl`:
+
+```bash
+# Acepta machine sin extensión
+curl -X POST http://127.0.0.1:8000/generar-cotizacion \
+  -H "Content-Type: application/json" \
+  -d '{"machine":"CM640","customer":"Cliente Demo"}'
+
+# Acepta machine con extensión .docx (case-insensitive)
+curl -X POST http://127.0.0.1:8000/generar-cotizacion \
+  -H "Content-Type: application/json" \
+  -d '{"machine":"cm640.docx","customer":"Cliente Demo"}'
+
+# También acepta el campo legacy modelo
+curl -X POST http://127.0.0.1:8000/generar-cotizacion \
+  -H "Content-Type: application/json" \
+  -d '{"modelo":"CM640.docx","nombre_cliente":"Cliente Demo"}'
+
+# Modelo inexistente -> 400 con listado corto de disponibles
+curl -i -X POST http://127.0.0.1:8000/generar-cotizacion \
+  -H "Content-Type: application/json" \
+  -d '{"machine":"CM9999","customer":"Cliente Demo"}'
+```
