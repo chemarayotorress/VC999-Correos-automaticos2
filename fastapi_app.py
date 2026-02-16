@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import io
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from cotizador_backend import generar_cotizacion_desde_json
 from template_resolver import list_available_models, normalize_model, resolve_template_path
+from catalog_sync import sync_catalog
 
 
 logger = logging.getLogger(__name__)
@@ -67,6 +69,18 @@ class CotizacionRequest(BaseModel):
 @app.get("/")
 def healthcheck() -> Dict[str, str]:
     return {"status": "ok"}
+
+
+@app.post("/sync-catalog")
+def force_sync_catalog(x_vc999_token: Optional[str] = Header(default=None, alias="X-VC999-TOKEN")) -> Dict[str, Any]:
+    expected_token = os.getenv("CATALOG_SYNC_TOKEN", "").strip()
+    if not expected_token or x_vc999_token != expected_token:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    result = sync_catalog(force=True, persist_cache=True)
+    if not result.get("ok"):
+        raise HTTPException(status_code=503, detail=result)
+    return result
 
 
 @app.post("/generar-cotizacion")
