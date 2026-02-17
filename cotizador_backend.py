@@ -224,13 +224,49 @@ def _replace_in_paragraph(paragraph, key: str, value: str) -> bool:
     full = "".join(r.text for r in runs)
     if key not in full:
         return False
-    new = full.replace(key, value)
-    if new == full:
-        return False
-    runs[0].text = new
-    for r in runs[1:]:
-        r.text = ""
-    return True
+
+    replaced = False
+    while True:
+        full = "".join(r.text for r in runs)
+        start = full.find(key)
+        if start < 0:
+            break
+        end = start + len(key)
+        replaced = True
+
+        cursor = 0
+        first_overlap = True
+        for run in runs:
+            run_text = run.text or ""
+            run_end = cursor + len(run_text)
+
+            if run_end <= start or cursor >= end:
+                cursor = run_end
+                continue
+
+            left_cut = max(0, start - cursor)
+            right_cut = max(0, end - cursor)
+            left = run_text[:left_cut]
+            right = run_text[right_cut:]
+
+            if first_overlap:
+                run.text = f"{left}{value}{right}"
+                first_overlap = False
+            else:
+                run.text = f"{left}{right}"
+
+            cursor = run_end
+
+    return replaced
+
+
+def _sanitize_placeholder_value(value: Any) -> str:
+    text = "" if value is None else str(value)
+    text = text.replace("\f", "")
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    while "\n\n\n" in text:
+        text = text.replace("\n\n\n", "\n\n")
+    return text.strip()
 
 
 def _replace_in_table(table, key: str, value: str) -> int:
@@ -258,13 +294,38 @@ def _replace_in_doc_part(part, key: str, value: str) -> int:
 def docx_replace_placeholders(doc: "Document", mapping: dict) -> Dict[str, int]:
     replaced_counts: Dict[str, int] = {}
     for k, v in mapping.items():
-        count = _replace_in_doc_part(doc, k, v)
+        count = _replace_in_doc_part(doc, k, _sanitize_placeholder_value(v))
         for section in doc.sections:
-            count += _replace_in_doc_part(section.header, k, v)
-            count += _replace_in_doc_part(section.footer, k, v)
+            count += _replace_in_doc_part(section.header, k, _sanitize_placeholder_value(v))
+            count += _replace_in_doc_part(section.footer, k, _sanitize_placeholder_value(v))
         if count:
             replaced_counts[k] = count
     return replaced_counts
+
+
+def _paragraph_has_page_break(paragraph) -> bool:
+    for run in paragraph.runs:
+        for br in run._element.findall('.//w:br', run._element.nsmap):
+            if br.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}type') == 'page':
+                return True
+    return False
+
+
+def _remove_paragraph(paragraph) -> None:
+    p = paragraph._element
+    parent = p.getparent()
+    if parent is not None:
+        parent.remove(p)
+
+
+def _cleanup_trailing_layout_artifacts(doc: "Document") -> None:
+    trailing = list(doc.paragraphs)
+    for paragraph in reversed(trailing):
+        is_blank = not (paragraph.text or "").strip()
+        if not is_blank and not _paragraph_has_page_break(paragraph):
+            break
+        if is_blank or _paragraph_has_page_break(paragraph):
+            _remove_paragraph(paragraph)
 
 
 def _convert_docx_to_pdf(input_path: str, output_path: str) -> str:
@@ -532,6 +593,7 @@ def generar_cotizacion_backend(
 
     doc = Document(tpl_path)
     replaced_counts = docx_replace_placeholders(doc, data)
+    _cleanup_trailing_layout_artifacts(doc)
 
     tracked_placeholders = ("{{descarga_gas}}", "{{positivo_air}}")
     for placeholder in tracked_placeholders:
