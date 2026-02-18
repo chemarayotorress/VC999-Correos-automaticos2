@@ -23,6 +23,12 @@ try:
 except Exception:  # pragma: no cover - dependencia opcional
     docx2pdf_convert = None  # type: ignore
 
+try:
+    from PyPDF2 import PdfReader, PdfWriter
+except Exception:  # pragma: no cover - dependencia opcional
+    PdfReader = None  # type: ignore
+    PdfWriter = None  # type: ignore
+
 from machine_catalog import load_catalog
 from template_mapping import TemplateMappingManager
 from template_resolver import normalize_model, resolve_template_path
@@ -352,6 +358,59 @@ def _convert_docx_to_pdf(input_path: str, output_path: str) -> str:
         return ""
 
 
+def _page_has_meaningful_content(page) -> bool:
+    try:
+        text = (page.extract_text() or "").strip()
+    except Exception:
+        text = ""
+    if text:
+        return True
+
+    try:
+        contents = page.get_contents()
+    except Exception:
+        contents = None
+
+    if contents is None:
+        return False
+
+    streams = contents if isinstance(contents, list) else [contents]
+    for stream in streams:
+        try:
+            data = stream.get_data() or b""
+        except Exception:
+            data = b""
+        if len(data.strip()) > 20:
+            return True
+    return False
+
+
+def _remove_blank_pdf_pages(pdf_path: str) -> str:
+    if not pdf_path or not os.path.exists(pdf_path) or PdfReader is None or PdfWriter is None:
+        return pdf_path
+
+    try:
+        reader = PdfReader(pdf_path)
+        writer = PdfWriter()
+        kept_pages = 0
+        for page in reader.pages:
+            if _page_has_meaningful_content(page):
+                writer.add_page(page)
+                kept_pages += 1
+
+        if kept_pages == 0 or kept_pages == len(reader.pages):
+            return pdf_path
+
+        cleaned_path = f"{os.path.splitext(pdf_path)[0]}_clean.pdf"
+        with open(cleaned_path, "wb") as f:
+            writer.write(f)
+        os.replace(cleaned_path, pdf_path)
+    except Exception:
+        return pdf_path
+
+    return pdf_path
+
+
 def _build_option_summary(conf_options: Dict[str, Any], overrides: Dict[str, Any]) -> Tuple[Dict[str, str], Decimal]:
     selected: Dict[str, str] = {}
     total = Decimal("0")
@@ -626,6 +685,7 @@ def generar_cotizacion_backend(
                 pdf_path = out_pdf
             else:
                 pdf_path = _convert_docx_to_pdf(out_docx, out_pdf)
+            pdf_path = _remove_blank_pdf_pages(pdf_path)
         except Exception:
             pdf_path = ""
 
