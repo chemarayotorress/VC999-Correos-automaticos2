@@ -7,3 +7,4 @@ uvicorn
 # Modo Service Account para sincronización de catálogo desde Google Sheets
 google-api-python-client>=2.0.0
 google-auth>=2.0.0
+PyPDF2>=3.0.0
