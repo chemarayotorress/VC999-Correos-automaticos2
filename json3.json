@@ -41,6 +41,7 @@
     {
       "parameters": {
         "jsCode": "const data = $getWorkflowStaticData('global');\nconst catalog = data.catalog;\nconst vendedores = data.vendedores;\nconst incomingText = String($json?.text || '').trim();\nconst isReloadCommand = incomingText === '/reload';\nlet memoryEmpty = true;\n\nif (catalog && Object.keys(catalog).length > 0) {\n  let hasOptions = false;\n  for (const model of Object.values(catalog)) {\n    if (!model || !Array.isArray(model.steps)) continue;\n    for (const step of model.steps) {\n      if (!step || !Array.isArray(step.options)) continue;\n      if (step.options.length > 0) { hasOptions = true; break; }\n    }\n    if (hasOptions) break;\n  }\n  memoryEmpty = !hasOptions;\n}\n\nif (!memoryEmpty && (!vendedores || Object.keys(vendedores).length === 0)) {\n  memoryEmpty = true;\n}\n\nif (isReloadCommand) memoryEmpty = true;\n\nconst firstItem = $input.first()?.json ?? {};\nreturn [{ json: { ...firstItem, memoryEmpty, shouldReload: isReloadCommand, isReloadCommand } }];"
+        "jsCode": "const data = $getWorkflowStaticData('global');\nconst incomingText = String($json?.text || '').trim();\nconst isReloadCommand = incomingText.startsWith('/reload');\nconst hasCatalog = !!data.catalog && Object.keys(data.catalog).length > 0;\nconst hasVendedores = !!data.vendedores && Object.keys(data.vendedores).length > 0;\nconst memoryEmpty = !(hasCatalog && hasVendedores) || isReloadCommand;\nreturn [{ json: { ...$json, memoryEmpty, shouldReload: isReloadCommand, isReloadCommand } }];"
       },
       "id": "5bc118ec-4a6f-4d9d-bc44-8d3fbd2d7a83",
       "name": "Verificar Memoria",
@@ -247,8 +248,7 @@
                     "rightValue": "START",
                     "operator": {
                       "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
+                      "operation": "equals"
                     }
                   }
                 ],
@@ -270,8 +270,7 @@
                     "rightValue": "MENU_SELECTION",
                     "operator": {
                       "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
+                      "operation": "equals"
                     }
                   }
                 ],
@@ -293,8 +292,7 @@
                     "rightValue": "COTIZACION_FLOW",
                     "operator": {
                       "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
+                      "operation": "equals"
                     }
                   }
                 ],
@@ -316,8 +314,70 @@
                     "rightValue": "RELOAD_DONE",
                     "operator": {
                       "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "LOGIN_FLOW",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "REPORTES",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "LOGOUT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
                     }
                   }
                 ],
@@ -1194,6 +1254,357 @@
           "name": "Telegram account"
         }
       }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "DB_Vendedores",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "651a74b1-d826-430e-b2d1-4539f00479cf",
+      "name": "Leer DB_Vendedores",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        560,
+        0
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OOUXjbBJzw1K2luL",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Log_Cotizaciones",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "b8ca5a77-e8be-4c93-b05e-075c5f41a9f7",
+      "name": "Leer Log_Cotizaciones",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        780,
+        0
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OOUXjbBJzw1K2luL",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData=$getWorkflowStaticData('global');\nstaticData.sessions=staticData.sessions||{}; staticData.loginFlow=staticData.loginFlow||{};\nconst chatId=$json.chatId; const text=String($json.text||'').trim(); const now=Date.now();\nconst state=staticData.loginFlow[chatId]||{stage:'await_username',failedAttempts:0,lockedUntil:null,usuarioTemp:null};\nif(state.lockedUntil && now < Number(state.lockedUntil)){\n  const d=new Date(Number(state.lockedUntil));\n  return [{json:{chatId,text:`⏳ Bloqueado por intentos fallidos. Intenta a las ${d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}.`,reply_markup:{}}}];\n}\nif(!text || text==='/start'){\n  state.stage='await_username'; staticData.loginFlow[chatId]=state;\n  return [{json:{chatId,text:'🔐 Escribe tu usuario:',reply_markup:{}}}];\n}\nif(state.stage==='await_username'){\n  state.usuarioTemp=text.toLowerCase(); state.stage='await_password'; staticData.loginFlow[chatId]=state;\n  return [{json:{chatId,text:'🔑 Escribe tu contraseña:',reply_markup:{}}}];\n}\nif(state.stage==='await_password'){\n  const vendedores=staticData.vendedores||{}; const v=vendedores[String(state.usuarioTemp||'').toLowerCase()];\n  if(!v || v.password!==text){\n    state.failedAttempts=(state.failedAttempts||0)+1;\n    if(state.failedAttempts>=3){state.lockedUntil=now+15*60*1000; state.failedAttempts=0; state.stage='await_username'; staticData.loginFlow[chatId]=state; return [{json:{chatId,text:'🔒 3 intentos fallidos. Bloqueado 15 minutos.',reply_markup:{}}}];}\n    staticData.loginFlow[chatId]=state; return [{json:{chatId,text:`❌ Credenciales incorrectas. Intento ${state.failedAttempts}/3`,reply_markup:{}}}];\n  }\n  if(!v.activo){ state.stage='await_username'; staticData.loginFlow[chatId]=state; return [{json:{chatId,text:'❌ Tu cuenta está desactivada. Contacta al admin.',reply_markup:{}}}]; }\n  staticData.sessions[chatId]={usuario:v.usuario,nombre_completo:v.nombre_completo,email_vendedor:v.email_vendedor,rol:v.rol,loginTimestamp:now,failedAttempts:0,lockedUntil:null};\n  delete staticData.loginFlow[chatId];\n  return [{json:{chatId,text:`✅ Bienvenido ${v.nombre_completo}. Sesión iniciada. Usa /start para comenzar.`,reply_markup:{}}}];\n}\nreturn [{json:{chatId,text:'🔐 Escribe tu usuario:',reply_markup:{}}}];"
+      },
+      "id": "b8687870-a616-4608-b0a6-25c26915b06b",
+      "name": "Flujo de Login",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData=$getWorkflowStaticData('global');\nconst chatId=$json.chatId; if(staticData.sessions) delete staticData.sessions[chatId]; if(staticData.cot) delete staticData.cot[chatId]; if(staticData.loginFlow) delete staticData.loginFlow[chatId];\nreturn [{json:{chatId,text:'👋 Sesión cerrada correctamente.',reply_markup:{}}}];"
+      },
+      "id": "c399a128-9c51-4a68-89d1-ca5a88aba7dd",
+      "name": "Cerrar Sesión",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        980
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData=$getWorkflowStaticData('global');\nconst chatId=$json.chatId; const cmd=String($json.text||'').trim(); const session=staticData.sessions?.[chatId];\nif(!session) return [{json:{chatId,text:'❌ Debes iniciar sesión.',reply_markup:{},needsExcel:false}}];\nconst log=Array.isArray(staticData.logCot)?staticData.logCot:[];\nconst now=new Date();\nconst ym=(s)=>{const d=new Date(s); if(Number.isNaN(d.getTime())) return ''; return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`};\nlet text=''; let needsExcel=false; let rows=[];\nif(cmd.startsWith('/mis_cotizaciones')){const month=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`; const mine=log.filter(r=>String(r.vendedor_usuario||'').toLowerCase()===session.usuario.toLowerCase() && ym(r.fecha)===month); const total=mine.reduce((a,b)=>a+Number(b.precio_total||0),0); text=`📋 TUS COTIZACIONES - ${month}\n\n`+mine.slice(-20).map((r,i)=>`${i+1}. ${r.folio||''}\n🏭 ${r.maquina||''} → ${r.cliente_nombre||''}\n💰 $${Number(r.precio_total||0).toLocaleString()} USD | ${r.estatus||'enviada'}`).join('\n\n')+`\n\nTotal: ${mine.length} cotizaciones | $${total.toLocaleString()} USD`;}\nelse if(cmd.startsWith('/reporte_mes')){ if(session.rol!=='admin') text='⛔ Solo admin.'; else {const arg=cmd.split(' ')[1]||`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`; const m=log.filter(r=>ym(r.fecha)===arg); const grp={}; m.forEach(r=>{const u=r.vendedor_usuario||'sin_usuario'; grp[u]=grp[u]||{count:0,total:0,name:r.vendedor_nombre||u}; grp[u].count++; grp[u].total+=Number(r.precio_total||0)}); text=`📊 REPORTE ${arg}\n\n`+Object.entries(grp).map(([u,g])=>`👤 ${g.name} (${u})\n📋 Cotizaciones: ${g.count}\n💰 Monto total: $${g.total.toLocaleString()} USD\n📈 Promedio: $${Math.round(g.total/(g.count||1)).toLocaleString()} USD`).join('\n\n'); }}\nelse if(cmd.startsWith('/reporte_anual')){ if(session.rol!=='admin') text='⛔ Solo admin.'; else {const year=Number(cmd.split(' ')[1]||now.getFullYear()); const y=log.filter(r=>String(r.fecha||'').startsWith(String(year))); text=`📊 REPORTE ANUAL ${year}\nTotal cotizaciones: ${y.length}`;}}\nelse if(cmd.startsWith('/reporte_detalle')){ if(session.rol!=='admin') text='⛔ Solo admin.'; else {const last=log.slice(-20).reverse(); text='📊 ÚLTIMAS 20 COTIZACIONES\n\n'+last.map(r=>`${r.folio} | ${r.vendedor_usuario} | ${r.cliente_nombre} | ${r.maquina} | $${Number(r.precio_total||0).toLocaleString()}`).join('\n'); }}\nelse if(cmd.startsWith('/reporte_vendedor')){ if(session.rol!=='admin') text='⛔ Solo admin.'; else {const u=(cmd.split(' ')[1]||'').toLowerCase(); const month=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`; const f=log.filter(r=>String(r.vendedor_usuario||'').toLowerCase()===u && ym(r.fecha)===month); text=`📋 REPORTE ${u} ${month}\nCotizaciones: ${f.length}\nMonto: $${f.reduce((a,b)=>a+Number(b.precio_total||0),0).toLocaleString()} USD`; }}\nelse if(cmd.startsWith('/exportar_excel')){ if(session.rol!=='admin') text='⛔ Solo admin.'; else {needsExcel=true; const arg=cmd.split(' ')[1]||`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`; rows=log.filter(r=>ym(r.fecha)===arg); text=`📎 Generando Excel de ${arg} (${rows.length} filas)...`; }}\nelse text='Comando no reconocido.';\nreturn [{json:{chatId,text,reply_markup:{},needsExcel,rows}}];"
+      },
+      "id": "9f8b632b-850b-4198-809e-5c1613d4e923",
+      "name": "Motor de Reportes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        850
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.needsExcel }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "861bb4e8-0e0c-458b-9f68-893e7ba1137f",
+      "name": "¿Exportar Excel?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1370,
+        850
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$json.rows||[];\nconst headers=['folio','fecha','fecha_actualizacion','vendedor_usuario','vendedor_nombre','cliente_nombre','cliente_email','maquina','precio_base','precio_total','opciones_detalle','pdf_drive_url','pdf_drive_file_id','estatus','version'];\nconst esc=(v)=>`\"${String(v??'').replace(/\"/g,'\"\"')}\"`;\nconst csv=[headers.join(',')].concat(rows.map(r=>headers.map(h=>esc(r[h])).join(','))).join('\n');\nconst buff=Buffer.from(csv,'utf8');\nreturn [{json:{...$json,fileName:`reporte_${new Date().toISOString().slice(0,7)}.xlsx`},binary:{data:{data:buff.toString('base64'),mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',fileName:`reporte_${new Date().toISOString().slice(0,7)}.xlsx`}}}];"
+      },
+      "id": "66366e89-2360-441a-a51a-9daac8273e6c",
+      "name": "Generar Excel Reporte",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1580,
+        790
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "={{ $json.chatId }}",
+        "binaryData": true
+      },
+      "id": "56cabb76-7ce2-4cf5-a0f2-0d2ce3a2ccd2",
+      "name": "Enviar Excel Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1800,
+        790
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "0ymiX4kvSxuRAFog",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot8335208719:AAHyaYQ2wKfjGEWOf9V1Zrp6KOE7HYWbJrY/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ ({ chat_id: $json.chatId, text: $json.text, parse_mode: \"Markdown\" }) }}",
+        "options": {}
+      },
+      "id": "646c6a0d-203d-44b2-8c95-e3d4a53a66b2",
+      "name": "Enviar Reporte Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1580,
+        920
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData=$getWorkflowStaticData('global');\nconst now=new Date(); const chatId=$json.chatId; const session=staticData.sessions?.[chatId]||{}; const user=(session.usuario||'anon').toLowerCase();\nconst date=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;\nconst log=Array.isArray(staticData.logCot)?staticData.logCot:[]; const today=log.filter(r=>String(r.vendedor_usuario||'').toLowerCase()===user && String(r.folio||'').includes(`-${date}-`));\nconst seq=String(today.length+1).padStart(3,'0'); const folio=$json.userState?.duplicateRow?.folio || `COT-${user}-${date}-${seq}`;\nconst isEdit=!!$json.userState?.duplicateRow;\nreturn [{json:{...$json,folio,isEdit,driveFolderPath:`Cotizaciones_VC999/${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')} - ${now.toLocaleString('es-MX',{month:'long'})}/${user}/`,fileName:`${folio}_${($json.modelo||'Maq').replace(/\\s+/g,'-')}_${($json.nombre||'Cliente').replace(/\\s+/g,'')}.pdf`}}];"
+      },
+      "id": "9dada169-c2b0-4dca-a50c-a69bf37249ca",
+      "name": "Preparar Registro Cotización",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2490,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.isEdit }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "15bda39f-ad23-4024-a339-c53b12e9ce3b",
+      "name": "¿Es Edición?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2700,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "upload",
+        "name": "={{ $json.fileName }}",
+        "driveId": "My Drive",
+        "parents": "={{ $json.driveFolderPath }}",
+        "binaryData": true,
+        "binaryPropertyName": "data"
+      },
+      "id": "7ca52639-fdea-4d76-bc24-c6876e1c57e1",
+      "name": "Subir PDF a Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2920,
+        500
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "update",
+        "fileId": "={{ $json.userState.duplicateRow.pdf_drive_file_id }}",
+        "binaryData": true,
+        "binaryPropertyName": "data"
+      },
+      "id": "7ae841cb-5367-4eca-9bed-c7fd3f85f90f",
+      "name": "Actualizar PDF en Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2920,
+        620
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Log_Cotizaciones",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "folio": "={{ $json.folio }}",
+            "fecha": "={{ $now }}",
+            "fecha_actualizacion": "={{ $now }}",
+            "vendedor_usuario": "={{ $json.session.usuario }}",
+            "vendedor_nombre": "={{ $json.session.nombre_completo }}",
+            "cliente_nombre": "={{ $json.nombre }}",
+            "cliente_email": "={{ $json.email }}",
+            "maquina": "={{ $json.modelo }}",
+            "precio_base": "={{ $json.quotePayload.basePrice || $json.fastapiBody.precio_base }}",
+            "precio_total": "={{ $json.total }}",
+            "opciones_detalle": "={{ JSON.stringify($json.quotePayload?.selections || []) }}",
+            "pdf_drive_url": "={{ $json.webViewLink || \"\" }}",
+            "pdf_drive_file_id": "={{ $json.id || \"\" }}",
+            "estatus": "enviada",
+            "version": 1
+          },
+          "matchingColumns": []
+        },
+        "options": {}
+      },
+      "id": "9e1b3bdf-4531-4469-89d2-d55b1bfef295",
+      "name": "Registrar Cotización",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        3140,
+        500
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OOUXjbBJzw1K2luL",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1n3Sz_7LWvO56Aet__6MWGpqSgvcp7emX9o4AHpignjY",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Log_Cotizaciones",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fecha_actualizacion": "={{ $now }}",
+            "cliente_nombre": "={{ $json.nombre }}",
+            "cliente_email": "={{ $json.email }}",
+            "precio_base": "={{ $json.quotePayload.basePrice || $json.fastapiBody.precio_base }}",
+            "precio_total": "={{ $json.total }}",
+            "opciones_detalle": "={{ JSON.stringify($json.quotePayload?.selections || []) }}",
+            "pdf_drive_url": "={{ $json.webViewLink || $json.userState.duplicateRow.pdf_drive_url }}",
+            "pdf_drive_file_id": "={{ $json.id || $json.userState.duplicateRow.pdf_drive_file_id }}",
+            "estatus": "revisada",
+            "version": "={{ Number($json.userState.duplicateRow.version || 1) + 1 }}"
+          },
+          "matchingColumns": [
+            "folio"
+          ]
+        },
+        "options": {}
+      },
+      "id": "fc3bb0d2-9d6e-4df3-92c4-385a10864912",
+      "name": "Actualizar Cotización",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        3140,
+        620
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OOUXjbBJzw1K2luL",
+          "name": "Google Sheets account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -1594,6 +2005,163 @@
         [
           {
             "node": "Enviar Reporte Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer DB_Vendedores": {
+      "main": [
+        [
+          {
+            "node": "Leer Log_Cotizaciones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Log_Cotizaciones": {
+      "main": [
+        [
+          {
+            "node": "Guardar en Memoria",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flujo de Login": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cerrar Sesión": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Motor de Reportes": {
+      "main": [
+        [
+          {
+            "node": "¿Exportar Excel?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Exportar Excel?": {
+      "main": [
+        [
+          {
+            "node": "Generar Excel Reporte",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar Reporte Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar Excel Reporte": {
+      "main": [
+        [
+          {
+            "node": "Enviar Excel Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Registro Cotización": {
+      "main": [
+        [
+          {
+            "node": "¿Es Edición?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Es Edición?": {
+      "main": [
+        [
+          {
+            "node": "Actualizar PDF en Drive",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Subir PDF a Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subir PDF a Drive": {
+      "main": [
+        [
+          {
+            "node": "Registrar Cotización",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar PDF en Drive": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Cotización",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Cotización": {
+      "main": [
+        [
+          {
+            "node": "Preparar Email (json3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Cotización": {
+      "main": [
+        [
+          {
+            "node": "Preparar Email (json3)",
             "type": "main",
             "index": 0
           }
