@@ -58,6 +58,19 @@ Si necesitas compartir la aplicación mediante una memoria USB u otro medio exte
 
 ## API FastAPI: prueba manual para n8n (`/generar-cotizacion`)
 
+### Hotfix layout DOCX/PDF (sin mover plantilla)
+
+- **Causa detectada:** se eliminaban párrafos/saltos al final del DOCX antes de convertir a PDF. Ese saneo podía alterar el flujo de páginas y provocar corrimiento visual desde hojas posteriores.
+- **Cambio aplicado (mínimo):**
+  - se mantiene el layout original del DOCX sin limpiar párrafos/saltos del template;
+  - el reemplazo se mantiene a nivel de `runs` (sin usar `paragraph.text = ...` ni `cell.text = ...`);
+  - se validan placeholders remanentes (`{{...}}`) en body/tablas/header/footer y se aborta si queda alguno;
+  - se registra en logs qué motor de conversión se usó (`docx2pdf` o LibreOffice).
+- **Prueba local recomendada (layout):**
+  1. Convierte el DOCX plantilla directo a PDF (**baseline**).
+  2. Genera la cotización completa (**filled**) con el backend.
+  3. Compara que ambos tengan igual número de páginas y mismo `MediaBox/CropBox` por página (con `pypdf`/`PyPDF2`) y valida visualmente hoja 2+.
+
 Inicia el servicio con:
 
 ```bash

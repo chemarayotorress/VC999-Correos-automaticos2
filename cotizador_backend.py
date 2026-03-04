@@ -6,6 +6,7 @@ función central que puede ser reutilizada por la interfaz gráfica o por la CLI
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import unicodedata
 import logging
@@ -272,7 +273,7 @@ def _sanitize_placeholder_value(value: Any) -> str:
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     while "\n\n\n" in text:
         text = text.replace("\n\n\n", "\n\n")
-    return text.strip()
+    return text
 
 
 def _replace_in_table(table, key: str, value: str) -> int:
@@ -307,6 +308,35 @@ def docx_replace_placeholders(doc: "Document", mapping: dict) -> Dict[str, int]:
         if count:
             replaced_counts[k] = count
     return replaced_counts
+
+
+def _collect_part_text(part) -> List[str]:
+    chunks: List[str] = []
+    for paragraph in part.paragraphs:
+        chunks.append(paragraph.text or "")
+    for table in part.tables:
+        chunks.extend(_collect_table_text(table))
+    return chunks
+
+
+def _collect_table_text(table) -> List[str]:
+    chunks: List[str] = []
+    for row in table.rows:
+        for cell in row.cells:
+            for paragraph in cell.paragraphs:
+                chunks.append(paragraph.text or "")
+            for nested_table in cell.tables:
+                chunks.extend(_collect_table_text(nested_table))
+    return chunks
+
+
+def _find_unreplaced_placeholders(doc: "Document") -> List[str]:
+    chunks = _collect_part_text(doc)
+    for section in doc.sections:
+        chunks.extend(_collect_part_text(section.header))
+        chunks.extend(_collect_part_text(section.footer))
+    text = "\n".join(chunks)
+    return sorted(set(re.findall(r"\{\{[^{}]+\}\}", text)))
 
 
 def _paragraph_has_page_break(paragraph) -> bool:
@@ -652,7 +682,7 @@ def generar_cotizacion_backend(
 
     doc = Document(tpl_path)
     replaced_counts = docx_replace_placeholders(doc, data)
-    _cleanup_trailing_layout_artifacts(doc)
+    # No eliminar párrafos/saltos del template para preservar layout exacto.
 
     tracked_placeholders = ("{{descarga_gas}}", "{{positivo_air}}")
     for placeholder in tracked_placeholders:
@@ -670,6 +700,12 @@ def generar_cotizacion_backend(
     default_name = f"Cotizacion_{_sanitize_filename(modelo)}_{_sanitize_filename(cliente)}_{datetime.now().strftime('%Y%m%d_%H%M')}.docx"
     out_docx = ruta_salida_word or os.path.join(_app_dir(), "salidas", default_name)
     out_pdf = ruta_salida_pdf
+    unresolved_placeholders = _find_unreplaced_placeholders(doc)
+    if unresolved_placeholders:
+        raise ValueError(
+            "Quedaron placeholders sin reemplazar en la plantilla: "
+            + ", ".join(unresolved_placeholders[:20])
+        )
     doc.save(out_docx)
 
     if ruta_salida_pdf is not None:
@@ -681,9 +717,15 @@ def generar_cotizacion_backend(
     if out_pdf:
         try:
             if docx2pdf_convert:
-                docx2pdf_convert(out_docx, out_pdf)
-                pdf_path = out_pdf
-            else:
+                logger.info("Conversión DOCX->PDF intentando docx2pdf (Word).")
+                try:
+                    docx2pdf_convert(out_docx, out_pdf)
+                    if os.path.exists(out_pdf):
+                        pdf_path = out_pdf
+                except Exception as conv_error:
+                    logger.warning("docx2pdf falló, se intentará LibreOffice: %s", conv_error)
+            if not pdf_path:
+                logger.info("Conversión DOCX->PDF usando LibreOffice headless.")
                 pdf_path = _convert_docx_to_pdf(out_docx, out_pdf)
             pdf_path = _remove_blank_pdf_pages(pdf_path)
         except Exception:
