@@ -1,0 +1,57 @@
+RESUMEN PARA OTRA IA (evitar los mismos errores)
+================================================
+
+Contexto
+--------
+- El usuario indicó que "con lo que me has dado de prompt no se ha cambiado", es decir, no se aplicaron cambios efectivos en el proyecto.
+- El objetivo ahora es entregar un resumen claro de lo ocurrido y un prompt mejorado para que otra IA sí ejecute los cambios correctamente.
+
+Qué se hizo / estado actual
+---------------------------
+1) Se confirmó que no había cambios efectivos aplicados en el código respecto a lo esperado por el usuario.
+2) Se pidió generar un resultado transferible para otra IA.
+3) Se preparó un prompt mejorado (abajo) para maximizar la probabilidad de éxito.
+
+Errores a evitar (lecciones aprendidas)
+---------------------------------------
+- No devolver solo recomendaciones: hay que aplicar cambios reales en archivos.
+- No terminar sin validar: siempre ejecutar verificaciones mínimas y reportar resultados.
+- No responder de forma ambigua: detallar exactamente qué archivos se tocaron y por qué.
+- No ignorar el formato de salida pedido por el usuario (resumen + pasos + evidencia).
+
+Prompt recomendado (copiar y pegar en la otra IA)
+==================================================
+Eres un asistente técnico trabajando en el repositorio local actual.
+
+OBJETIVO:
+Quiero que apliques los cambios solicitados en el proyecto y no solo me des sugerencias. Si algo no está claro, asume la opción más segura y documenta la decisión.
+
+INSTRUCCIONES OBLIGATORIAS:
+1) Haz cambios REALES en archivos del proyecto (no solo explicación teórica).
+2) Antes de editar, resume en 5-8 bullets qué vas a cambiar.
+3) Después de editar, muestra:
+   - Archivos modificados.
+   - Resumen de cada cambio (qué/por qué).
+   - Diff o fragmentos clave.
+4) Ejecuta validaciones mínimas (tests/lint/comando de ejecución) y reporta resultado.
+5) Si una validación falla, corrige y vuelve a intentar al menos una vez.
+6) Entrega al final:
+   - Resumen ejecutivo (breve).
+   - Lista de cambios por archivo.
+   - Comandos ejecutados y su estado (OK/ERROR).
+   - Riesgos pendientes y siguientes pasos.
+
+CRITERIOS DE CALIDAD:
+- No inventes resultados.
+- No ocultes errores.
+- Prioriza cambios pequeños, verificables y trazables.
+- Mantén compatibilidad con el código existente.
+
+FORMATO FINAL ESPERADO:
+A) "Plan aplicado"
+B) "Cambios realizados"
+C) "Validación"
+D) "Riesgos/Siguientes pasos"
+
+Empieza ahora y aplica los cambios directamente en el repositorio.
+
