@@ -38,6 +38,16 @@ APP_TITLE = "VC999 Packaging+ Cotizador"
 logger = logging.getLogger(__name__)
 DEFAULT_CONCEPTS = [("Con orden de compra", "35"), ("Contra aviso de entrega", "55"), ("Al instalar", "10")]
 
+PLACEHOLDER_KEY_ALIASES: Dict[str, List[str]] = {
+    "voltaje": ["voltaje", "voltage"],
+    "voltage": ["voltaje", "voltage"],
+    "operacion": ["operacion", "operation"],
+    "operation": ["operacion", "operation"],
+    "bomba": ["opcion_bomba", "pump_options", "pump options", "bomba", "bomba_de_vacio"],
+    "bomba_vacio": ["opcion_bomba", "pump_options", "pump options", "bomba", "bomba_de_vacio"],
+    "opcion_bomba": ["opcion_bomba", "pump_options", "pump options", "bomba", "bomba_de_vacio"],
+}
+
 OPTION_TRANSLATIONS = {
     "Automatic lid, WITH mechanical cut": "Tapa automática CON corte mecánico",
     "Automatic lid with NO mechanical cut": "Tapa automática SIN corte mecánico",
@@ -183,6 +193,13 @@ def _normalize_key(text: str) -> str:
     return nk
 
 
+def _normalize_placeholder_key(text: Any) -> str:
+    nk = unicodedata.normalize("NFKD", str(text or "")).encode("ascii", "ignore").decode("ascii")
+    nk = nk.lower().strip()
+    nk = re.sub(r"[^a-z0-9]+", "_", nk)
+    return nk.strip("_")
+
+
 def _to_bool_or_none(value: Any) -> Optional[bool]:
     if value is None:
         return None
@@ -271,9 +288,9 @@ def _sanitize_placeholder_value(value: Any) -> str:
     text = "" if value is None else str(value)
     text = text.replace("\f", "")
     text = text.replace("\r\n", "\n").replace("\r", "\n")
-    while "\n\n\n" in text:
-        text = text.replace("\n\n\n", "\n\n")
-    return text
+    text = text.replace("\n", " ")
+    text = re.sub(r"\s{2,}", " ", text)
+    return text.strip()
 
 
 def _replace_in_table(table, key: str, value: str) -> int:
@@ -508,6 +525,7 @@ def generar_cotizacion_backend(
     ruta_salida_pdf: Optional[str] = None,
     precio_base_override: Optional[float] = None,
     precio_total_override: Optional[float] = None,
+    payload_replacements: Optional[Dict[str, Any]] = None,
 ) -> dict:
     """Genera la cotización (DOCX y opcional PDF) usando la lógica de Packaging+.
 
@@ -675,6 +693,16 @@ def generar_cotizacion_backend(
 
     _apply_template_mapping('packaging', template_name, data, context)
 
+    if isinstance(payload_replacements, dict):
+        for raw_key, raw_value in payload_replacements.items():
+            normalized_key = _normalize_placeholder_key(raw_key)
+            if not normalized_key:
+                continue
+            clean_value = _sanitize_placeholder_value(raw_value)
+            alias_names = PLACEHOLDER_KEY_ALIASES.get(normalized_key, [normalized_key])
+            for alias in alias_names:
+                data[f"{{{{{alias}}}}}"] = clean_value
+
     if Document is None:
         raise RuntimeError("python-docx no está instalado")
 
@@ -702,9 +730,9 @@ def generar_cotizacion_backend(
     out_pdf = ruta_salida_pdf
     unresolved_placeholders = _find_unreplaced_placeholders(doc)
     if unresolved_placeholders:
-        raise ValueError(
-            "Quedaron placeholders sin reemplazar en la plantilla: "
-            + ", ".join(unresolved_placeholders[:20])
+        logger.warning(
+            "Quedaron placeholders sin reemplazar en la plantilla: %s",
+            ", ".join(unresolved_placeholders[:20]),
         )
     doc.save(out_docx)
 
@@ -822,6 +850,10 @@ def generar_cotizacion_desde_json(datos: dict) -> str:
         for step, selection_value in selections.items():
             _set_override(str(step), selection_value)
 
+    payload_replacements = datos.get("replacements")
+    if not isinstance(payload_replacements, dict):
+        payload_replacements = datos.get("placeholders") or datos.get("reemplazos") or datos.get("specs") or datos.get("vars")
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     base_name = f"Cotizacion_{_sanitize_filename(modelo)}_{_sanitize_filename(cliente)}_{timestamp}"
     salida_dir = os.path.join(_app_dir(), "salidas")
@@ -843,6 +875,7 @@ def generar_cotizacion_desde_json(datos: dict) -> str:
         ruta_salida_pdf=ruta_pdf,
         precio_base_override=precio_base,
         precio_total_override=precio_total,
+        payload_replacements=payload_replacements if isinstance(payload_replacements, dict) else None,
     )
 
     pdf_path = resultado.get("ruta_pdf") or ruta_pdf

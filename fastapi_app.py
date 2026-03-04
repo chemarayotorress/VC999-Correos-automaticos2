@@ -3,6 +3,8 @@ from __future__ import annotations
 import io
 import logging
 import os
+import re
+import unicodedata
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -17,6 +19,61 @@ from catalog_sync import sync_catalog
 
 logger = logging.getLogger(__name__)
 app = FastAPI(title="VC999 Packaging+ API")
+
+
+def _normalize_placeholder_key(raw_key: Any) -> str:
+    text = unicodedata.normalize("NFKD", str(raw_key or "")).encode("ascii", "ignore").decode("ascii")
+    text = text.lower().strip()
+    text = re.sub(r"[^a-z0-9]+", "_", text)
+    return text.strip("_")
+
+
+def _extract_display_value(raw_value: Any) -> Any:
+    if isinstance(raw_value, dict):
+        for key in ("label", "text", "name", "title", "value"):
+            if key in raw_value and raw_value.get(key) not in (None, ""):
+                return _extract_display_value(raw_value.get(key))
+        return ""
+    if isinstance(raw_value, list):
+        pieces: List[str] = []
+        for value in raw_value:
+            resolved = _extract_display_value(value)
+            if resolved not in (None, ""):
+                pieces.append(str(resolved))
+        return ", ".join(pieces)
+    return raw_value
+
+
+def build_replacements(body: Dict[str, Any]) -> Dict[str, Any]:
+    repl: Dict[str, Any] = {}
+
+    placeholders_obj = body.get("placeholders") or body.get("reemplazos") or body.get("specs") or body.get("vars")
+    if isinstance(placeholders_obj, dict):
+        for raw_key, raw_value in placeholders_obj.items():
+            normalized_key = _normalize_placeholder_key(raw_key)
+            if normalized_key:
+                repl[normalized_key] = _extract_display_value(raw_value)
+
+    selections = body.get("selections")
+    if isinstance(selections, dict):
+        for raw_key, raw_value in selections.items():
+            normalized_key = _normalize_placeholder_key(raw_key)
+            if normalized_key:
+                repl[normalized_key] = _extract_display_value(raw_value)
+    elif isinstance(selections, list):
+        for item in selections:
+            if not isinstance(item, dict):
+                continue
+            raw_key = item.get("id") or item.get("key") or item.get("slug") or item.get("step") or item.get("name")
+            normalized_key = _normalize_placeholder_key(raw_key)
+            if not normalized_key:
+                continue
+            raw_value = item.get("label")
+            if raw_value in (None, ""):
+                raw_value = item.get("value")
+            repl[normalized_key] = _extract_display_value(raw_value)
+
+    return repl
 
 
 class CotizacionRequest(BaseModel):
@@ -86,6 +143,10 @@ def force_sync_catalog(x_vc999_token: Optional[str] = Header(default=None, alias
 @app.post("/generar-cotizacion")
 def generar_cotizacion(req: CotizacionRequest):
     datos = req.model_dump(exclude_none=True)
+    print("PAYLOAD_KEYS", list(datos.keys()))
+    payload_placeholders = datos.get("placeholders") or datos.get("reemplazos") or datos.get("specs") or datos.get("vars")
+    print("PLACEHOLDERS_SIZE", len(payload_placeholders) if isinstance(payload_placeholders, dict) else None)
+    print("SELECTIONS_COUNT", len(datos.get("selections", [])) if isinstance(datos.get("selections"), list) else None)
 
     model_raw = datos.get("machine") or datos.get("modelo") or datos.get("plantilla")
     model_normalized = normalize_model(model_raw)
@@ -137,6 +198,11 @@ def generar_cotizacion(req: CotizacionRequest):
     if isinstance(selections, dict):
         for key, value in selections.items():
             datos.setdefault(key, value)
+
+    replacements = build_replacements(datos)
+    if replacements:
+        datos["replacements"] = replacements
+        print("REPLACEMENTS_SIZE", len(replacements))
 
     try:
         pdf_path_str = generar_cotizacion_desde_json(datos)
